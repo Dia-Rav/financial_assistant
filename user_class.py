@@ -25,12 +25,26 @@ def check_user_category(data):
     current_user = users_in_contact.get(data[0], user(data[0]))
     categories = current_user.categories
     for key, products in categories.items():
-        print (products)
         if data[1] in products:
             data1 = (data[0], key, data[2])
             payment(data1)
             return True
     return False
+
+def change_category_name(data):
+    #data = (id, название старой категории, название новой категории)
+    current_user = users_in_contact.get(data[0], user(data[0]))
+    current_id = data[0]
+    current_old_category = data[1]
+    current_new_category = data[2]
+    if current_old_category in current_user.categories:
+        data1 = (current_id, current_old_category, current_new_category, current_user.categories)
+        change_category_name_DATABASE(data1)
+        current_user.categories[current_new_category] = current_user.categories[current_old_category]
+        del current_user.categories[current_old_category]
+        return True
+    else:
+        return False
 
 
 def new_category(new_data):#new_data = (user_id, категория, продукт, цена)
@@ -50,4 +64,4 @@ def new_category(new_data):#new_data = (user_id, категория, проду�
 # id_123.categories = {'food': ('eggs', 'milk', 'apples'), 'drinks': ('tea', 'coffee')}
 # data = (id_123, 'coffee', 256)
 
-users_in_contact = []
+users_in_contact = {}
