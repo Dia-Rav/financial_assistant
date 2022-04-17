@@ -63,14 +63,30 @@ def create_database_C():
         if (sqlite_connection):
             sqlite_connection.close()
 
+def A_update(data_A, cursor, sqlite_connection):
+    try:
+        check_existance = """select word from A_DATABASE where word = ? AND category = ?"""
+        cursor.execute(check_existance, data_A)
+        record = cursor.fetchall()
+        if record == []:
+            sqlite_insert_A = """INSERT INTO A_DATABASE
+                                    (word, category, frequency)
+                                    VALUES (?, ?, ?);"""
+            data_A = (data_A[0], data_A[1], 1)
+            cursor.execute(sqlite_insert_A, data_A)
+            sqlite_connection.commit()
+        else:
+            sqlite_insert_A = """Update A_DATABASE set frequency = frequency + 1 where word = ? AND category = ?"""
+            cursor.execute(sqlite_insert_A, data_A)
+            sqlite_connection.commit()
+    except sqlite3.Error as error:
+        print("Ошибка в блоке A_update: ", error)
+
 def insert_new_category(data_tuple):
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
-
-        sqlite_insert_A = """INSERT INTO A_DATABASE
-                              (word, category, frequency)
-                              VALUES (?, ?, ?);"""
+        
         sqlite_insert_B = """INSERT INTO B_DATABASE
                               (id, category, money_spent)
                               VALUES (?, ?, ?);"""
@@ -78,19 +94,55 @@ def insert_new_category(data_tuple):
                               (id, word, category)
                               VALUES (?, ?, ?);"""
 
-        data_A = (data_tuple[2], data_tuple[1], 1)
         data_B = (data_tuple[0], data_tuple[1], data_tuple[3])
         data_C = (data_tuple[0], data_tuple[2], data_tuple[1])
 
-        cursor.execute(sqlite_insert_A, data_A)
         cursor.execute(sqlite_insert_B, data_B)
         cursor.execute(sqlite_insert_C, data_C)
         sqlite_connection.commit()
+
+
+        data_A = (data_tuple[2], data_tuple[1])
+        A_update(data_A, cursor, sqlite_connection)
 
         cursor.close()
 
     except sqlite3.Error as error:
         print("Ошибка в блоке Insertion: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def change_category_name_DATABASE(data):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+
+        sql_update_query = """Update B_DATABASE set category = ? where id = ? AND category = ?"""
+        update_data = (data[2], data[0], data[1])
+        cursor.execute(sql_update_query, update_data)
+        sqlite_connection.commit()
+
+        sql_update_query = """Update C_DATABASE set category = ? where id = ? AND category = ?"""
+        cursor.execute(sql_update_query, update_data)
+        sqlite_connection.commit()
+        
+        words_to_update = []
+        for word in data[3]:                                   #создаём список слов для обновления которые переходят из старой категории (data[1]) в новую (data[2])
+            words_to_update.append((data[1], word))
+        
+        sql_update_query = """Update A_DATABASE set frequency = frequency - 1 where category = ? AND word = ?"""
+        cursor.executemany(sql_update_query, words_to_update)                                                     #понижаем частоту слов, так как у них поменялась категория
+        sqlite_connection.commit()
+
+        cleaning(cursor, sqlite_connection) #чистим таблицу от нулевых частот
+
+        for word in data[3]:                         #обновление статистики по новой категории 
+            A_update((word, data[2]), cursor, sqlite_connection)
+        
+        cursor.close()
+    except sqlite3.Error as error:
+        print("Ошибка в блоке change_category_name_DATABASE: ", error)
     finally:
         if sqlite_connection:
             sqlite_connection.close()
@@ -107,8 +159,8 @@ def payment(data):
 
         sql_update_query = """Update B_DATABASE set money_spent = ? where id = ? and category = ?"""
         money += data[2]
-        data = (money, data[0], data[1])
-        cursor.execute(sql_update_query, data)
+        update_data = (money, data[0], data[1])
+        cursor.execute(sql_update_query, update_data)
         sqlite_connection.commit()
         cursor.close()
 
@@ -163,8 +215,11 @@ def delete_user(id):
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        sql_update_query = """DELETE from C_DATABASE where id = ?"""
-        cursor.execute(sql_update_query, (id, ))
+        sql_delete_query = """DELETE from B_DATABASE where id = ?"""
+        cursor.execute(sql_delete_query, (id, ))
+        sqlite_connection.commit()
+        sql_delete_query = """DELETE from C_DATABASE where id = ?"""
+        cursor.execute(sql_delete_query, (id, ))
         sqlite_connection.commit()
         cursor.close()
 
@@ -173,6 +228,15 @@ def delete_user(id):
     finally:
         if sqlite_connection:
             sqlite_connection.close()
+
+def cleaning(cursor, sqlite_connection):
+    try:
+        sql_delete_query = """DELETE from A_DATABASE where frequency = 0"""
+        cursor.execute(sql_delete_query)
+        sqlite_connection.commit()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке cleaning: ", error)
 
 def delete_ALL():
     try:
@@ -197,8 +261,10 @@ def delete_ALL():
 
 
 if __name__ == "__main__":
+    data = (123, 'фрукты', 'fruits', ['банан'])
+    change_category_name_DATABASE(data)
+
+    #delete_ALL()
+
     #data = (123, 'фрукты', 'банан', 200)
     #insert_new_category(data)
-
-    data = (123, 'фрукты', 500)
-    payment(data)
