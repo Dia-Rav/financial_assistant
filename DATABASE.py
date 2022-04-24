@@ -210,6 +210,50 @@ def update_category(id, category_to_update, new_category):
         if sqlite_connection:
             sqlite_connection.close()
 
+def otchet():
+     try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+
+        table = 'База данных по статистике\n \nслово\t\tкатегория\tчастота \n'
+
+        sql_select_query = """SELECT * FROM A_DATABASE"""
+        cursor.execute(sql_select_query)
+        records = cursor.fetchall()
+
+        for row in records:
+            tmp = str(row[0]) + '\t\t' + str(row[1]) + '\t\t' + str(row[2]) + '\n'
+            table += tmp
+
+        table += '\nБаза данных по денежным тратам\n \nid\t\tкатегория\tпотраченные деньги \n'
+
+        sql_select_query = """SELECT * FROM B_DATABASE"""
+        cursor.execute(sql_select_query)
+        records = cursor.fetchall()
+
+        for row in records:
+            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\n'
+            table += tmp
+
+        table += '\nБаза данных по статистике\n \nid\t\tслово\t\tкатегория \n'
+
+        sql_select_query = """SELECT * FROM C_DATABASE"""
+        cursor.execute(sql_select_query)
+        records = cursor.fetchall()
+
+        for row in records:
+            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\n'
+            table += tmp
+
+        print(table)
+        cursor.close()
+
+     except sqlite3.Error as error:
+        print("Ошибка в блоке otchet: ", error)
+     finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
 def delete_user(id):
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
@@ -259,12 +303,4 @@ def delete_ALL():
         if sqlite_connection:
             sqlite_connection.close()
 
-
-if __name__ == "__main__":
-    data = (123, 'фрукты', 'fruits', ['банан'])
-    change_category_name_DATABASE(data)
-
-    #delete_ALL()
-
-    #data = (123, 'фрукты', 'банан', 200)
-    #insert_new_category(data)
+#if __name__ == '__main__':
