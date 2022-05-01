@@ -13,6 +13,7 @@ def get_text_messages(message):
 @bot.message_handler(commands = ['new'])
 def get_text_message(message):
     bot.send_message(message.from_user.id, "Расскажи о покупке в формате: категория цена название")\
+
     @bot.message_handler(content_types = "text")
     def get_category(msg):
         user_id = message.from_user.id
@@ -22,31 +23,40 @@ def get_text_message(message):
         if len(new_bought_tmp) != 3: #Ввел не по шаблону
             new_bought_tmp = []
             bot.send_message(message.from_user.id, "Что-то тут не так. Давай еще раз")
-            return
         else:  #Ввел по шаблону, обрабатываю списки вида ["(str,"; "int,"; "str)"]
                                           #и списки с любыми перестановками символов ","; "()"
             #Проверка категории
+            # if new_bought_tmp[0][0] == "(":
+            #     new_bought_tmp[0] = new_bought_tmp[0][1:]
+            # if new_bought_tmp[0][len(new_bought_tmp[0])-1] == ",":
+            #     new_bought_tmp[0] = new_bought_tmp[0][:-1]
             print(new_bought_tmp[0])
             #Проверка цены
+            # if new_bought_tmp[1][len(new_bought_tmp[1])-1] == ",":
+            #     new_bought_tmp[1] = new_bought_tmp[1][:-1]
             print(new_bought_tmp[1])
-            try: 
-                new_bought_tmp[1] = float (new_bought_tmp[1]) # Вместо цены какой-то бред
+            try:
+                new_bought_tmp[1] = float(new_bought_tmp[1])  # Вместо цены какой-то бред
             except:
                 new_bought_tmp = []
-                bot.send_message(message.from_user.id, "С ценой что-то не так. Попробуем еще раз?")
-                return
-            #Проверка названия
-            print(new_bought_tmp[2])
+                bot.send_message(message.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
 
+            #Проверка названия
+            # if new_bought_tmp[2][len(new_bought_tmp[2]) - 1] == ")":
+            #         new_bought_tmp[2] = new_bought_tmp[2][:-1]
+            try:
+                print(new_bought_tmp[2])
+            except:
+                pass
             #if type(new_bought_tmp[2]) is int:  # Вместо названия какой-то бред
                 #new_bought_tmp = []
                 #bot.send_message(message.from_user.id, "Кажется, ты ошибся в категории. Попробуй снова")
             if new_bought_tmp:
                  new_bought.extend(new_bought_tmp)
-                 bot.send_message(message.from_user.id, "Вот данные, что я получил:\n"
-                                                        "Категория: "+new_bought[1]+"\n"
-                                                        "Цена: "+new_bought[2]+"\n"
-                                                        "Название: "+new_bought[3])
+                 bot.send_message(message.from_user.id, 
+                 "Вот данные, что я получил:\n Категория: {} \n Цена: {} \n Название: {} ".format(new_bought[1],
+                                                        str(new_bought[2]),
+                                                        new_bought[3]))
                  keyboard_new_bought = types.InlineKeyboardMarkup()  # наша клавиатура
                  key_yes_knb = types.InlineKeyboardButton(text='Да', callback_data='yes')  # кнопка «Да»
                  keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
