@@ -5,7 +5,7 @@ import user_class
 
 with open("token_bot.txt", "r") as file:
     token_bot = file.read()
-bot = telebot.AsyncTeleBot(token_bot)
+bot = telebot.TeleBot(token_bot)
 
 @bot.message_handler(commands=['help'])
 def print_help(message):
@@ -18,17 +18,18 @@ def processing_purchase(data):
         bot.send_message(data[0], "мы нашли категорию для этого продукта")
         return
     else: 
-                            mesg = bot.send_message(data[0], "в какую категорию отнести этот продукт?")
-                            bot.register_next_step_handler(mesg, get_category_for_new_purchase)
+        mesg = bot.send_message(data[0], "в какую категорию отнести этот продукт?")
+
+        category = bot.register_next_step_handler(mesg, get_category_for_new_purchase)
+        data_all = (data[0], category, data[2], data[1])
+        user_class.new_category(data_all)
+
 
 def get_category_for_new_purchase(message):
-                                print ('я получил', massege)
-                                new_data = (data[0], message, data[2], data[1])
-                                user_class.new_category(new_data)
-
-                                answer = 'Здорово! Что-то еще?'
-                                bot.send_message(data[0], answer)
-                                return
+    print ('я получил', message.text)
+    answer = 'Здорово! Что-то еще?'
+    bot.send_message(message.from_user.id, answer)
+    return message.text
 
 
 
@@ -84,7 +85,8 @@ def get_new_bought(message):
                          bot.send_message(call.message.chat.id, answer)
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
                #После положительного ансвера отправим в основноем меню как в начале
-import asyncio
-asyncio.run(bot.polling())
+bot.polling(none_stop=True, interval=0)
+
+
 
 

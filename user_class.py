@@ -25,7 +25,6 @@ def check_user_category(data):
     #data = (user_id (число), продукт (строка), price)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
     current_user = users_in_contact.get(data[0], user(data[0]))
-    print ('проверяем наличие категории для продукта')
     categories = current_user.categories
     for key, products in categories.items():
         if data[1] in products:
@@ -72,6 +71,7 @@ def new_category(data):#data = (user_id, категория, продукт, ц�
     DATABASE.insert_new_category(data)
     return
 
+DATABASE.otchet()
 
 # id_123 = user('Diana', 123)
 # id_123.categories = {'food': ('eggs', 'milk', 'apples'), 'drinks': ('tea', 'coffee')}
