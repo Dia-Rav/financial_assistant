@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-
+import DATABASE 
 import user_class
 import asyncio
 tmp_data = None
@@ -15,6 +15,8 @@ def print_help(message):
         bot.send_message(message.from_user.id, "Привет, я твой финансовый помощник. А ниже функции, "
                                                "которые я могу выполнять.\n ")
         bot.send_message(message.from_user.id, r"/new - расскажи о своей покупке")
+        bot.send_message(message.from_user.id, r"/report_for_month - количество денег, потраченных за текущий месяц")
+        bot.send_message(message.from_user.id, r"/report_for_year - количество денег, потраченных за текущий год")
 
 def processing_purchase(data):
     if user_class.check_user_category(data):
@@ -34,9 +36,6 @@ def get_category_for_new_purchase(message):
     data_all = (message.from_user.id, message.text, tmp_data[1], tmp_data[2])
     print (data_all)
     user_class.new_category(data_all)
-
-
-
 
 
 @bot.message_handler(commands = ['new'])
@@ -90,7 +89,36 @@ def get_new_bought(message):
                          answer = 'Попробуем снова?'
                          bot.send_message(call.message.chat.id, answer)
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+
+
                #После положительного ансвера отправим в основноем меню как в начале
+
+@bot.message_handler(commands = ['report_for_month'])
+def report_for_month(message):
+    id = message.from_user.id
+    date_today = date.today()
+    month_today = date_today.month
+    year_today = date_today.year
+    max_day = user_class.number_of_days_monthly[month_today-1]
+    if month_today == 2 and year_today % 4 == 0 :
+        max_day += 1
+    date1 = date(year_today, month_today, 1)
+    date2 = date(year_today, month_today, max_day)
+    total = str(DATABASE.get_the_amount_period (id, date1, date2))
+    bot.send_message(message.from_user.id, total)
+
+@bot.message_handler(commands = ['report_for_year'])
+def report_for_month(message):
+    id = message.from_user.id
+    date_today = date.today()
+    year_today = date_today.year
+    date1 = date(year_today, 1, 1)
+    date2 = date(year_today, 12, 31)
+    total = str(DATABASE.get_the_amount_period (id, date1, date2))
+    bot.send_message(message.from_user.id, total)
+
+
+
 bot.polling(none_stop=True, interval=0)
 
 

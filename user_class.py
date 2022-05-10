@@ -72,8 +72,7 @@ def new_category(data):#data = (user_id, категория, продукт, ц�
     DATABASE.insert_new_category(data)
     return
 
-DATABASE.otchet()
 
-# id_123 = user('Diana', 123)
-# id_123.categories = {'food': ('eggs', 'milk', 'apples'), 'drinks': ('tea', 'coffee')}
-# data = (id_123, 'coffee', 256)
+
+number_of_days_monthly = [31, 28, 31, 30, 31, 30 ,31, 31, 30, 31, 30, 31]
+
