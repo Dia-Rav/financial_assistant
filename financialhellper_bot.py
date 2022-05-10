@@ -1,8 +1,11 @@
 import telebot
 from telebot import types
+
 import user_class
+import asyncio
+tmp_data = None
 
-
+new_category_in_func = None
 with open("token_bot.txt", "r") as file:
     token_bot = file.read()
 bot = telebot.TeleBot(token_bot)
@@ -18,18 +21,21 @@ def processing_purchase(data):
         bot.send_message(data[0], "мы нашли категорию для этого продукта")
         return
     else: 
+        global tmp_data 
+        tmp_data = data
         mesg = bot.send_message(data[0], "в какую категорию отнести этот продукт?")
-
-        category = bot.register_next_step_handler(mesg, get_category_for_new_purchase)
-        data_all = (data[0], category, data[2], data[1])
-        user_class.new_category(data_all)
+        bot.register_next_step_handler(mesg, get_category_for_new_purchase)
 
 
 def get_category_for_new_purchase(message):
-    print ('я получил', message.text)
+    global tmp_data
     answer = 'Здорово! Что-то еще?'
     bot.send_message(message.from_user.id, answer)
-    return message.text
+    data_all = (message.from_user.id, message.text, tmp_data[2], tmp_data[1])
+    print (data_all)
+    user_class.new_category(data_all)
+
+
 
 
 
