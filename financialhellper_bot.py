@@ -31,7 +31,7 @@ def get_category_for_new_purchase(message):
     global tmp_data
     answer = 'Здорово! Что-то еще?'
     bot.send_message(message.from_user.id, answer)
-    data_all = (message.from_user.id, message.text, tmp_data[2], tmp_data[1])
+    data_all = (message.from_user.id, message.text, tmp_data[1], tmp_data[2])
     print (data_all)
     user_class.new_category(data_all)
 
