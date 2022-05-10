@@ -1,4 +1,7 @@
 import DATABASE
+from datetime import date
+
+users_in_contact = {}
 
 class user:
     def __init__ (self, id, date_of_start = 1):
@@ -6,9 +9,10 @@ class user:
         #(пока поставим начало месяца, но в будущем это, например, может быт день зп)
         self.user_id = id 
         self.date_of_start = date_of_start
-        self.categories = get_dict(id)
-        users_is_contact[id] = self
-        return self
+        self.categories = DATABASE.get_dict(id)
+        global users_in_contact
+        users_in_contact[id]  = self
+        return
         #информация должна приходить от тг бота
     def change_name(self, new_name):
         self.user_name = new_name
@@ -16,19 +20,16 @@ class user:
         return self.user_name
     def get_user_id(self):
         return self.user_id
-    #метод для сохранения объекта
-    # def save(self):
-    #     return (self.__class__, self.__dict__)
-    
 
 def check_user_category(data):
-    #data = (user_id (число), продукт (строка), цена (число))
+    #data = (user_id (число), продукт (строка), price)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
     current_user = users_in_contact.get(data[0], user(data[0]))
     categories = current_user.categories
     for key, products in categories.items():
         if data[1] in products:
             data1 = (data[0], key, data[2])
+            print (data1)
             DATABASE.payment(data1)
             return True
     return False
@@ -63,21 +64,16 @@ def change_name_category(data):
         current_user.categories[current_old_category] = (current_purchase)
         new_category((current_id, current_new_category, current_purchase, 0))
 
-def new_category(new_data):#new_data = (user_id, категория, продукт, цена)
+def new_category(data):#data = (user_id, категория, продукт, цена)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
     current_user = users_in_contact.get(data[0], user(data[0]))
+    print (data)
     current_user.categories[data[1]] = (data[2])
-    DATABASE.insert_new_category(new_data)
+    DATABASE.insert_new_category(data)
     return
 
-
-# def load(cls, attributes):
-#     obj = cls.__new__(cls)  # Создание объекта класса cls без вызова __init__
-#     obj.__dict__.update(attributes)  # Добавление в объект десериализованных атрибутов
-#     return obj
+DATABASE.otchet()
 
 # id_123 = user('Diana', 123)
 # id_123.categories = {'food': ('eggs', 'milk', 'apples'), 'drinks': ('tea', 'coffee')}
 # data = (id_123, 'coffee', 256)
-
-users_in_contact = {}
