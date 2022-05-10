@@ -67,6 +67,7 @@ def change_name_category(data):
 def new_category(data):#data = (user_id, категория, продукт, цена)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
     current_user = users_in_contact.get(data[0], user(data[0]))
+    print (data)
     current_user.categories[data[1]] = (data[2])
     DATABASE.insert_new_category(data)
     return
