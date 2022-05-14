@@ -14,10 +14,6 @@ class user:
         users_in_contact[id]  = self
         return
         #информация должна приходить от тг бота
-    def change_name(self, new_name):
-        self.user_name = new_name
-    def get_user_name (self):
-        return self.user_name
     def get_user_id(self):
         return self.user_id
 

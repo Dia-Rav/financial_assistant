@@ -3,8 +3,9 @@ from telebot import types
 import DATABASE 
 import user_class
 import asyncio
+from datetime import date
 tmp_data = None
-
+new_purchase = ()
 new_category_in_func = None
 with open("token_bot.txt", "r") as file:
     token_bot = file.read()
@@ -14,12 +15,12 @@ bot = telebot.TeleBot(token_bot)
 def print_help(message):
         bot.send_message(message.from_user.id, "Привет, я твой финансовый помощник. А ниже функции, "
                                                "которые я могу выполнять.\n ")
-        bot.send_message(message.from_user.id, r"/new - расскажи о своей покупке")
-        bot.send_message(message.from_user.id, r"/report_for_month - количество денег, потраченных за текущий месяц")
-        bot.send_message(message.from_user.id, r"/report_for_year - количество денег, потраченных за текущий год")
+        bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n /report_for_month - количество денег, потраченных за текущий месяц")
+        bot.send_message(message.from_user.id, "/report_for_year - количество денег, потраченных за текущий год \n /change_category_name - сменить название категории")
 
 def processing_purchase(data):
     if user_class.check_user_category(data):
+        
         bot.send_message(data[0], "мы нашли категорию для этого продукта")
         return
     else: 
@@ -34,7 +35,6 @@ def get_category_for_new_purchase(message):
     answer = 'Здорово! Что-то еще?'
     bot.send_message(message.from_user.id, answer)
     data_all = (message.from_user.id, message.text, tmp_data[1], tmp_data[2])
-    print (data_all)
     user_class.new_category(data_all)
 
 
@@ -51,20 +51,14 @@ def get_new_bought(message):
         if len(new_bought_tmp) != 2: #Ввел не по шаблону
             new_bought_tmp = []
             bot.send_message(message.from_user.id, "Что-то тут не так. Давай еще раз")
-        else:  #Ввел по шаблону, обрабатываю списки вида ["(str,"; "int,"; "str)"]
-                                          #и списки с любыми перестановками символов ","; "()"
-
-            print(new_bought_tmp[0])
+        else:  #Ввел по шаблону, обрабатываю списки вида [("int,"; "str)"]
             try:
                 new_bought_tmp[0] = float(new_bought_tmp[0])  # Вместо цены какой-то бред
             except:
                 new_bought_tmp = []
                 bot.send_message(message.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
 
-            try:
-                print(new_bought_tmp[1])
-            except:
-                pass
+                
 
             if new_bought_tmp:
                  new_bought.extend(new_bought_tmp)
@@ -78,12 +72,14 @@ def get_new_bought(message):
                  keyboard_new_bought.add(key_no_knb)
                  question_knb = 'Верно?'
                  bot.send_message(message.from_user.id, text=question_knb, reply_markup=keyboard_new_bought)
+                 global new_purchase
+                 new_purchase = (new_bought[0], new_bought[2], new_bought[1])
                  @bot.callback_query_handler(func=lambda call: True)
                  def query_handler(call):
                      bot.answer_callback_query(callback_query_id=call.id, text='Спасибо за ответ!')
                      answer = ''
                      if call.data == 'yes':
-                        data = (new_bought[0], new_bought[2], new_bought[1])
+                        data = new_purchase
                         processing_purchase(data)
                      elif call.data == 'no':
                          answer = 'Попробуем снова?'
@@ -117,7 +113,29 @@ def report_for_month(message):
     total = str(DATABASE.get_the_amount_period (id, date1, date2))
     bot.send_message(message.from_user.id, total)
 
+@bot.message_handler(commands = ['change_category_name'])
+def change_category_name(message):
+    old = bot.send_message(message.from_user.id, "имя какой категории нужно поменять?")
+    bot.register_next_step_handler(old, get_old_category)
 
+
+def get_old_category(msg):
+    user_id = msg.from_user.id
+    global tmp_data
+    tmp_data = msg.text
+    new = bot.send_message(msg.from_user.id, "на какую?")
+    bot.register_next_step_handler(new, get_category_for_rename)
+
+def get_category_for_rename(msg):
+    global tmp_data
+    answer = 'Здорово! Что-то еще?'
+    data = (msg.from_user.id, tmp_data, msg.text)
+    print (data)
+    if user_class.change_category_name(data):
+        bot.send_message(msg.from_user.id, answer)
+    else:
+        bot.send_message(msg.from_user.id, 'такой категории нет')
+   
 
 bot.polling(none_stop=True, interval=0)
 
