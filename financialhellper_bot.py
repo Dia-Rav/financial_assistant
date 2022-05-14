@@ -21,7 +21,6 @@ def print_help(message):
 
 def processing_purchase(data):
     if user_class.check_user_category(data):
-        
         bot.send_message(data[0], "мы нашли категорию для этого продукта")
         print_help(data[0])
         return
@@ -38,7 +37,8 @@ def get_category_for_new_purchase(message):
     bot.send_message(message.from_user.id, answer)
     print_help(message)
     data_all = (message.from_user.id, message.text, tmp_data[1], tmp_data[2])
-    user_class.new_category(data_all)
+    user_class.add_to_category(data_all)
+
 
 
 @bot.message_handler(commands = ['new'])
