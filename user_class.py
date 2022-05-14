@@ -50,11 +50,11 @@ def change_name_category(data):
     #Входные данные data = (id, слово, название старой категории, название новой категории)
     current_user = users_in_contact.get(data[0], user(data[0]))
     current_id = data[0]
+    print (data)
     old_category = data[2]
     new_category_text = data[3]
     print(current_user.categories)
     purchase = data[1]
-
     if old_category in current_user.categories:
         products = current_user.categories[old_category]
         current_user.categories[old_category] = []
@@ -76,7 +76,7 @@ def change_name_category(data):
         current_user.categories[old_category] = (purchase)
         data_2 = (current_id, new_category_text, purchase, 0)
         new_category(data_2)
-    DATABASE.otchet()
+
 
 def new_category(data):#data = (user_id, категория, продукт, цена)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
@@ -101,6 +101,6 @@ def add_to_category(data):
 
 #
 
-DATABASE.otchet()
+
 number_of_days_monthly = [31, 28, 31, 30, 31, 30 ,31, 31, 30, 31, 30, 31]
 

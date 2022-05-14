@@ -4,9 +4,11 @@ import DATABASE
 import user_class
 import asyncio
 from datetime import date
+
+
 tmp_data = None
 new_purchase = ()
-new_category_in_func = None
+
 with open("token_bot.txt", "r") as file:
     token_bot = file.read()
 bot = telebot.TeleBot(token_bot)
@@ -163,7 +165,7 @@ def get_new_name_category(msg):
 def get_name_for_rename(msg):
     global tmp_data
     #data = (id, слово, название старой категории, название новой категории)
-    data = (msg.from_user.id, tmp_data[0], tmp_data[1], msg.text)
+    data = (msg.from_user.id, msg.text, tmp_data[0], tmp_data[1])
     bot.send_message(msg.from_user.id, "что-то еще?")
     user_class.change_name_category(data)
 
