@@ -27,6 +27,7 @@ def check_user_category(data):
         if data[1] in products:
             data1 = (data[0], key, data[2])
             print (data1)
+            #data1= (id, category, price)
             DATABASE.payment(data1)
             return True
     return False
@@ -85,7 +86,20 @@ def new_category(data):#data = (user_id, категория, продукт, ц�
     DATABASE.insert_new_category(data)
     return
 
+def add_to_category(data):
+    current_user = users_in_contact.get(data[0], user(data[0]))
+    if data[1] in current_user.categories:
+        products = current_user.categories[data[1]]
+        current_user.categories[data[1]] = []
+        for product in products:
+            current_user.categories[data[1]].append(product)
+        current_user.categories[data[1]] = tuple(current_user.categories[data[1]])
+        DATABASE.add_product_at_category(data)
+        pass 
+    else:
+        new_category(data)
 
+#
 
 DATABASE.otchet()
 number_of_days_monthly = [31, 28, 31, 30, 31, 30 ,31, 31, 30, 31, 30, 31]
