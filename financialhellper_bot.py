@@ -13,15 +13,17 @@ bot = telebot.TeleBot(token_bot)
 
 @bot.message_handler(commands=['help'])
 def print_help(message):
-        bot.send_message(message.from_user.id, "Привет, я твой финансовый помощник. А ниже функции, "
-                                               "которые я могу выполнять.\n ")
-        bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n /report_for_month - количество денег, потраченных за текущий месяц")
-        bot.send_message(message.from_user.id, "/report_for_year - количество денег, потраченных за текущий год \n /change_category_name - сменить название категории")
+        bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
+/report_for_month - количество денег, потраченных за текущий месяц \n \
+/report_for_year - количество денег, потраченных за текущий год \n \
+/change_category_name - сменить название категории\n \
+/change_name_category - сменить категорию для продукта")
 
 def processing_purchase(data):
     if user_class.check_user_category(data):
         
         bot.send_message(data[0], "мы нашли категорию для этого продукта")
+        print_help(data[0])
         return
     else: 
         global tmp_data 
@@ -34,6 +36,7 @@ def get_category_for_new_purchase(message):
     global tmp_data
     answer = 'Здорово! Что-то еще?'
     bot.send_message(message.from_user.id, answer)
+    print_help(message)
     data_all = (message.from_user.id, message.text, tmp_data[1], tmp_data[2])
     user_class.new_category(data_all)
 
@@ -58,8 +61,6 @@ def get_new_bought(message):
                 new_bought_tmp = []
                 bot.send_message(message.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
 
-                
-
             if new_bought_tmp:
                  new_bought.extend(new_bought_tmp)
                  bot.send_message(message.from_user.id, 
@@ -83,8 +84,10 @@ def get_new_bought(message):
                         processing_purchase(data)
                      elif call.data == 'no':
                          answer = 'Попробуем снова?'
+                         
                          bot.send_message(call.message.chat.id, answer)
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+                     
 
 
                #После положительного ансвера отправим в основноем меню как в начале
@@ -129,16 +132,40 @@ def get_old_category(msg):
 def get_category_for_rename(msg):
     global tmp_data
     answer = 'Здорово! Что-то еще?'
+    
     data = (msg.from_user.id, tmp_data, msg.text)
     print (data)
     if user_class.change_category_name(data):
         bot.send_message(msg.from_user.id, answer)
+        print_help(message)
     else:
         bot.send_message(msg.from_user.id, 'такой категории нет')
-   
+        print_help(msg)
+
+@bot.message_handler(commands = ['change_name_category'])
+def change_name_category(message):
+    old = bot.send_message(message.from_user.id, "какую категории нужно поменять?")
+    bot.register_next_step_handler(old, get_old_name_category)
+
+def get_old_name_category(msg):
+    user_id = msg.from_user.id
+    global tmp_data
+    tmp_data = [msg.text]
+    new = bot.send_message(msg.from_user.id, "на какую?")
+    bot.register_next_step_handler(new, get_new_name_category)
+
+def get_new_name_category(msg):
+    global tmp_data
+    tmp_data.append (msg.text)
+    new = bot.send_message(msg.from_user.id, "какой продукт?")
+    bot.register_next_step_handler(new, get_name_for_rename)
+
+def get_name_for_rename(msg):
+    global tmp_data
+    #data = (id, слово, название старой категории, название новой категории)
+    data = (msg.from_user.id, tmp_data[0], tmp_data[1], msg.text)
+    bot.send_message(msg.from_user.id, "что-то еще?")
+    user_class.change_name_category(data)
+
 
 bot.polling(none_stop=True, interval=0)
-
-
-
-
