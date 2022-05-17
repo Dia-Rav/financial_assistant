@@ -39,7 +39,7 @@ def change_category_name(data):
     old_category = data[1]
     new_category_text = data[2]
     if old_category in current_user.categories:
-        data1 = (current_id, old_category, new_category_text, current_user.categories)
+        data1 = (current_id, old_category, new_category_text, list(current_user.categories[old_category]))
         DATABASE.change_category_name_DATABASE(data1)
         current_user.categories[new_category_text] = current_user.categories[old_category]
         del current_user.categories[old_category]
@@ -56,7 +56,7 @@ def change_name_category(data):
     print(current_user.categories)
     purchase = data[1]
     if old_category in current_user.categories:
-        products = current_user.categories[old_category]
+        products = list(current_user.categories[old_category])
         current_user.categories[old_category] = []
         for x in products:
             if x == purchase:
