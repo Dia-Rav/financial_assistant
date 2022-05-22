@@ -27,7 +27,8 @@ def create_database_B():
         sqlite_create_table_query = '''CREATE TABLE B_DATABASE (
                                     id INTEGER NOT NULL,
                                     category TEXT NOT NULL,
-                                    money_spent INTEGER NOT NULL);'''
+                                    money_spent INTEGER NOT NULL,
+                                    last_change_month INTEGER NOT NULL);'''
 
         cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
@@ -63,6 +64,28 @@ def create_database_C():
         if (sqlite_connection):
             sqlite_connection.close()
 
+def create_database_STATISTICS():
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        sqlite_create_table_query = '''CREATE TABLE STATISTICS (
+                                    id INTEGER NOT NULL,
+                                    category TEXT NOT NULL,
+                                    money_spent INTEGER NOT NULL,
+                                    month INTEGER NOT NULL);'''
+
+        cursor = sqlite_connection.cursor()
+        cursor.execute(sqlite_create_table_query)
+        sqlite_connection.commit()
+        print("Таблица трат по месяцам STATISTICS создана")
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке Creation_STATISTICS: ", error)
+    finally:
+        if (sqlite_connection):
+            sqlite_connection.close()
+
 def A_update(data_A, cursor, sqlite_connection):
     try:
         check_existance = """select word from A_DATABASE where word = ? AND category = ?"""
@@ -82,28 +105,41 @@ def A_update(data_A, cursor, sqlite_connection):
     except sqlite3.Error as error:
         print("Ошибка в блоке A_update: ", error)
 
+def B_update(data_B, cursor, sqlite_connection): #data_B = (id, category, money)
+    try:
+        check_existance = """select category from B_DATABASE where id = ? AND category = ?"""
+        cursor.execute(check_existance, (data_B[0], data_B[1]))
+        record = cursor.fetchall()
+        if record == []:
+            sqlite_insert_B = """INSERT INTO B_DATABASE
+                              (id, category, money_spent, last_change_month)
+                              VALUES (?, ?, ?, ?);"""
+            data_B = (data_B[0], data_B[1], data_B[2], month_today(cursor, sqlite_connection))
+            cursor.execute(sqlite_insert_B, data_B)
+            sqlite_connection.commit()
+        else:
+            payment(data_B, 0, cursor, sqlite_connection)
+    except sqlite3.Error as error:
+        print("Ошибка в блоке B_update: ", error)
+
 def insert_new_category(data_tuple):   #data = (user_id, категория, продукт, цена)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
         
-        sqlite_insert_B = """INSERT INTO B_DATABASE
-                              (id, category, money_spent)
-                              VALUES (?, ?, ?);"""
         sqlite_insert_C = """INSERT INTO C_DATABASE
                               (id, word, category)
                               VALUES (?, ?, ?);"""
-
-        data_B = (data_tuple[0], data_tuple[1], data_tuple[3])
         data_C = (data_tuple[0], data_tuple[2], data_tuple[1])
 
-        cursor.execute(sqlite_insert_B, data_B)
         cursor.execute(sqlite_insert_C, data_C)
         sqlite_connection.commit()
 
-
         data_A = (data_tuple[2], data_tuple[1])
         A_update(data_A, cursor, sqlite_connection)
+
+        data_B = (data_tuple[0], data_tuple[1], data_tuple[3])
+        B_update(data_B, cursor, sqlite_connection)
 
         cursor.close()
 
@@ -200,27 +236,29 @@ def change_name_category_DATABASE(data): #data = (id, слово, названи
         if sqlite_connection:
             sqlite_connection.close()
 
-def payment(data): #data1 = (user_id, категория, цена)
+def payment(data, flag = 1, cursor = 0, sqlite_connection = 0): #data1 = (user_id, категория, цена)
     try:
-        sqlite_connection = sqlite3.connect('DATABASE.db')
-        cursor = sqlite_connection.cursor()
+        if flag == 1:
+            sqlite_connection = sqlite3.connect('DATABASE.db')
+            cursor = sqlite_connection.cursor()
 
         money_selection = """select money_spent from B_DATABASE where id = ? AND category = ?"""
         cursor.execute(money_selection, (data[0], data[1],))
         record = cursor.fetchall()
         money = record[0][0]
 
-        sql_update_query = """Update B_DATABASE set money_spent = ? where id = ? and category = ?"""
+        sql_update_query = """Update B_DATABASE set money_spent = ?, last_change_month = ? where id = ? and category = ?"""
         money += data[2]
-        update_data = (money, data[0], data[1])
+        update_data = (money, month_today(cursor, sqlite_connection), data[0], data[1])
         cursor.execute(sql_update_query, update_data)
         sqlite_connection.commit()
-        cursor.close()
+        if flag == 1:
+            cursor.close()
 
     except sqlite3.Error as error:
         print("Ошибка в блоке payment: ", error)
     finally:
-        if sqlite_connection:
+        if flag == 1 and sqlite_connection:
             sqlite_connection.close()
 
 def get_dict(id):
@@ -263,6 +301,50 @@ def update_category(id, category_to_update, new_category):
         if sqlite_connection:
             sqlite_connection.close()
 
+def timecheck():
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+
+        current_month = month_today(cursor, sqlite_connection)
+
+        sql_select_query = """SELECT id FROM B_DATABASE where last_change_month = ?"""
+        cursor.execute(sql_select_query, (current_month,))
+        records = cursor.fetchall()
+        if records == []:
+            sql_select_query = """SELECT * FROM B_DATABASE"""
+            cursor.execute(sql_select_query)
+            records = cursor.fetchall()
+            for row in records:
+                check_existance = """select id from STATISTICS where id = ? and category = ? and month = ?"""
+                cursor.execute(check_existance, (row[0], row[1], row[3], ))
+                record = cursor.fetchall()
+                if record == []:
+                    sqlite_insert_STATISTICS = """INSERT INTO STATISTICS
+                                        (id, category, money_spent, month)
+                                        VALUES (?, ?, ?, ?);"""
+                    data = (row[0], row[1], row[2], row[3])
+
+                    cursor.execute(sqlite_insert_STATISTICS, data)
+                    sqlite_connection.commit()
+                else:
+                    sqlite_update_STATISTICS = """Update STATISTICS set money_spent = ? where id = ? and category = ? and month = ?"""
+                    data = (row[2], row[0], row[1], row[3])
+                    cursor.execute(sqlite_update_STATISTICS, data)
+                    sqlite_connection.commit()
+
+            sqlite_update_B = """Update B_DATABASE set money_spent = 0 """
+            cursor.execute(sqlite_update_B)
+            sqlite_connection.commit()
+        
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке timecheck: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
 def otchet():
      try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
@@ -285,7 +367,7 @@ def otchet():
         records = cursor.fetchall()
 
         for row in records:
-            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\n'
+            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\t\t' + str(row[3]) + '\n'
             table += tmp
 
         table += '\nБаза данных по статистике\n \nid\t\tслово\t\tкатегория \n'
@@ -356,5 +438,36 @@ def delete_ALL():
         if sqlite_connection:
             sqlite_connection.close()
 
-#if __name__ == '__main__':
-#    change_name_category_DATABASE((999945678, 'black hole', 'nothing', 'nothing+'))
+def month_today(cursor, sqlite_connection):
+    try:
+        month = """SELECT strftime('%m', 'now')"""
+        cursor.execute(month)
+        records = cursor.fetchall()
+        return(int(records[0][0]))
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке month_today: ", error)
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def check():
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+
+        chk = """SELECT strftime('%m', 'now')"""
+        cursor.execute(chk)
+        records = cursor.fetchall()
+
+        print(records[0][0])
+        print('Done!')
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке check: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+if __name__ == '__main__':
+    timecheck()
