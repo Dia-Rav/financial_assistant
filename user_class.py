@@ -17,44 +17,34 @@ class user:
     def get_user_id(self):
         return self.user_id
 
-def check_user_category(data):
-    #data = (user_id (число), продукт (строка), price)
+def check_user_category(user_id, product, price):
+    #(user_id (число), продукт (строка), price)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
     #ищет элемент в категориях
-    current_user = users_in_contact.get(data[0], user(data[0]))
+    current_user = users_in_contact.get(user_id, user(user_id))
     categories = current_user.categories
     for key, products in categories.items():
-        if data[1] in products:
-            data1 = (data[0], key, data[2])
+        if product in products:
+            data1 = (user_id, key, product, price)
             print (data1)
-            #data1= (id, category, price)
-            DATABASE.payment(data1)
+            DATABASE.payment(user_id, key, product, price)
             return True
     return False
 
-def change_category_name(data):
+def change_category_name(user_id, old_category, new_category_text):
     #data = (id, название старой категории, название новой категории)
-    current_user = users_in_contact.get(data[0], user(data[0]))
-    current_id = data[0]
-    old_category = data[1]
-    new_category_text = data[2]
+    current_user = users_in_contact.get(user_id, user(user_id))
     if old_category in current_user.categories:
-        data1 = (current_id, old_category, new_category_text, list(current_user.categories[old_category]))
-        DATABASE.change_category_name_DATABASE(data1)
+        DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]))
         current_user.categories[new_category_text] = current_user.categories[old_category]
         del current_user.categories[old_category]
         return True
     else:
         return False
-def change_name_category(data):
+
+def change_name_category(user_id, purchase, old_category, new_category_text):
     #Входные данные data = (id, слово, название старой категории, название новой категории)
-    current_user = users_in_contact.get(data[0], user(data[0]))
-    current_id = data[0]
-    print (data)
-    old_category = data[2]
-    new_category_text = data[3]
-    print(current_user.categories)
-    purchase = data[1]
+    current_user = users_in_contact.get(user_id, user(user_id))
     if old_category in current_user.categories:
         products = list(current_user.categories[old_category])
         current_user.categories[old_category] = []
@@ -71,30 +61,28 @@ def change_name_category(data):
                 current_user.categories[old_category].append(x)
         current_user.categories[new_category_text] = tuple(current_user.categories[new_category_text])
         current_user.categories[old_category] = tuple(current_user.categories[old_category])
-        DATABASE.change_name_category_DATABASE(data)
+        DATABASE.change_name_category_DATABASE(user_id, purchase, old_category, new_category_text)
     else:
         current_user.categories[old_category] = (purchase)
-        data_2 = (current_id, new_category_text, purchase, 0)
-        new_category(data_2)
+        new_category(current_id, new_category_text, purchase, 0)
 
 
-def new_category(data):#data = (user_id, категория, продукт, цена)
+def new_category(user_id, category, product, price):#(user_id, категория, продукт, цена)
     #если мы уже создали этот объект, ищет объект в users_in_contact, иначе создает объект
-    current_user = users_in_contact.get(data[0], user(data[0]))
-    print (data)
-    current_user.categories[data[1]] = (data[2])
-    DATABASE.insert_new_category(data)
+    current_user = users_in_contact.get(user_id, user(user_id))
+    current_user.categories[category] = (product)
+    DATABASE.insert_new_category(user_id, category, product, price)
     return
 
-def add_to_category(data):
-    current_user = users_in_contact.get(data[0], user(data[0]))
-    if data[1] in current_user.categories:
-        products = current_user.categories[data[1]]
-        current_user.categories[data[1]] = []
-        for product in products:
-            current_user.categories[data[1]].append(product)
-        current_user.categories[data[1]] = tuple(current_user.categories[data[1]])
-        DATABASE.add_product_at_category(data)
+def add_to_category(user_id, category, product, price):
+    current_user = users_in_contact.get(user_id, user(user_id))
+    if category in current_user.categories:
+        products = current_user.categories[category]
+        current_user.categories[category] = []
+        for prod in products:
+            current_user.categories[category].append(prod)
+        current_user.categories[category] = tuple(current_user.categories[category])
+        DATABASE.add_product_at_category(user_id, category, product, price)
         pass 
     else:
         new_category(data)

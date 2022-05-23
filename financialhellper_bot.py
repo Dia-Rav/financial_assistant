@@ -21,15 +21,15 @@ def print_help(message):
 /change_category_name - сменить название категории\n \
 /change_name_category - сменить категорию для продукта")
 
-def processing_purchase(data):
-    if user_class.check_user_category(data):
-        bot.send_message(data[0], "мы нашли категорию для этого продукта")
-        print_help(data[0])
+def processing_purchase(user_id, product, price):
+    if user_class.check_user_category(user_id, product, price):
+        bot.send_message(user_id, "мы нашли категорию для этого продукта")
+        print_help(user_id)
         return
     else: 
         global tmp_data 
-        tmp_data = data
-        mesg = bot.send_message(data[0], "в какую категорию отнести этот продукт?")
+        tmp_data = ((user_id, product, price))
+        mesg = bot.send_message(user_id, "в какую категорию отнести этот продукт?")
         bot.register_next_step_handler(mesg, get_category_for_new_purchase)
 
 
@@ -38,8 +38,7 @@ def get_category_for_new_purchase(message):
     answer = 'Здорово! Что-то еще?'
     bot.send_message(message.from_user.id, answer)
     print_help(message)
-    data_all = (message.from_user.id, message.text, tmp_data[1], tmp_data[2])
-    user_class.add_to_category(data_all)
+    user_class.add_to_category(message.from_user.id, message.text, tmp_data[1], tmp_data[2])
 
 
 
@@ -83,7 +82,7 @@ def get_new_bought(message):
                      answer = ''
                      if call.data == 'yes':
                         data = new_purchase
-                        processing_purchase(data)
+                        processing_purchase(message.from_user.id, data[1], data[2])
                      elif call.data == 'no':
                          answer = 'Попробуем снова?'
                          
@@ -132,13 +131,9 @@ def get_old_category(msg):
     bot.register_next_step_handler(new, get_category_for_rename)
 
 def get_category_for_rename(msg):
-    global tmp_data
-    answer = 'Здорово! Что-то еще?'
-    
-    data = (msg.from_user.id, tmp_data, msg.text)
-    print (data)
-    if user_class.change_category_name(data):
-        bot.send_message(msg.from_user.id, answer)
+    global tmp_data    
+    if user_class.change_category_name(msg.from_user.id, tmp_data, msg.text):
+        bot.send_message(msg.from_user.id, 'Здорово! Что-то еще?')
         print_help(message)
     else:
         bot.send_message(msg.from_user.id, 'такой категории нет')
@@ -165,9 +160,8 @@ def get_new_name_category(msg):
 def get_name_for_rename(msg):
     global tmp_data
     #data = (id, слово, название старой категории, название новой категории)
-    data = (msg.from_user.id, msg.text, tmp_data[0], tmp_data[1])
     bot.send_message(msg.from_user.id, "что-то еще?")
-    user_class.change_name_category(data)
+    user_class.change_name_category(msg.from_user.id, msg.text, tmp_data[0], tmp_data[1])
 
 
 bot.polling(none_stop=True, interval=0)
