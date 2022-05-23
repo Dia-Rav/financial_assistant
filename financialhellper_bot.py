@@ -165,3 +165,4 @@ def get_name_for_rename(msg):
 
 
 bot.polling(none_stop=True, interval=0)
+DATABASE.timecheck()
