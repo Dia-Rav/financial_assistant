@@ -322,8 +322,8 @@ def timecheck():
                     cursor.execute(sqlite_update_STATISTICS, data)
                     sqlite_connection.commit()
 
-            sqlite_update_MONEY = """Update MONEY set money_spent = 0 """
-            cursor.execute(sqlite_update_MONEY)
+            sqlite_update_MONEY = """Update MONEY set money_spent = ?, last_change_month = ?"""
+            cursor.execute(sqlite_update_MONEY, (0, month_today(cursor, sqlite_connection, )))
             sqlite_connection.commit()
         
         cursor.close()
@@ -400,6 +400,25 @@ def delete_user(id):
         if sqlite_connection:
             sqlite_connection.close()
 
+def delete_purchase(user_id, product, price):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+
+        finding_category = """select category from WORDS_CATEGORIES where word = ? AND id = ?"""
+        cursor.execute(finding_category, (product, user_id))
+        record = cursor.fetchall()
+        category = record[0][0]
+        payment(user_id, category, -price, 0, cursor, sqlite_connection)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке delete_purchase: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
 def cleaning(cursor, sqlite_connection):
     try:
         sql_delete_query = """DELETE from FREQUENCY where frequency = 0"""
@@ -465,8 +484,8 @@ def check():
             sqlite_connection.close()
 
 if __name__ == '__main__':
-    timecheck()
-
+    #timecheck()
+    #delete_purchase(999900000, 'bread', 100)
     #insert_new_category(999900000, 'food', 'bread', 100)
     #insert_new_category(999900000, 'food', 'apple', 50)
     #insert_new_category(999900000, 'drink', 'cola', 50)
