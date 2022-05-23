@@ -100,7 +100,5 @@ def add_to_category(data):
         new_category(data)
 
 #
-
-
 number_of_days_monthly = [31, 28, 31, 30, 31, 30 ,31, 31, 30, 31, 30, 31]
-
+DATABASE.otchet()
