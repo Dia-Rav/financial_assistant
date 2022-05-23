@@ -1,9 +1,9 @@
 import sqlite3
 
-def create_database_A():
+def create_database_FREQUENCY():
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
-        sqlite_create_table_query = '''CREATE TABLE A_DATABASE (
+        sqlite_create_table_query = '''CREATE TABLE FREQUENCY (
                                     word TEXT NOT NULL,
                                     category TEXT NOT NULL,
                                     frequency INTEGER NOT NULL);'''
@@ -11,20 +11,20 @@ def create_database_A():
         cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
         sqlite_connection.commit()
-        print("Таблица статистики по категориям A_DATABASE создана")
+        print("Таблица статистики по категориям FREQUENCY создана")
 
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Ошибка в блоке Creation_A: ", error)
+        print("Ошибка в блоке Creation_FREQUENCY: ", error)
     finally:
         if (sqlite_connection):
             sqlite_connection.close()
 
-def create_database_B():
+def create_database_MONEY():
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
-        sqlite_create_table_query = '''CREATE TABLE B_DATABASE (
+        sqlite_create_table_query = '''CREATE TABLE MONEY (
                                     id INTEGER NOT NULL,
                                     category TEXT NOT NULL,
                                     money_spent INTEGER NOT NULL,
@@ -33,20 +33,20 @@ def create_database_B():
         cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
         sqlite_connection.commit()
-        print("Таблица финансов B_DATABASE создана")
+        print("Таблица финансов MONEY создана")
 
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Ошибка в блоке Creation_B: ", error)
+        print("Ошибка в блоке Creation_MONEY: ", error)
     finally:
         if (sqlite_connection):
             sqlite_connection.close()
 
-def create_database_C():
+def create_database_WORDS_CATEGORIES():
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
-        sqlite_create_table_query = '''CREATE TABLE C_DATABASE (
+        sqlite_create_table_query = '''CREATE TABLE WORDS_CATEGORIES (
                                     id INTEGER NOT NULL,
                                     word TEXT NOT NULL,
                                     category TEXT NOT NULL);'''
@@ -54,12 +54,12 @@ def create_database_C():
         cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
         sqlite_connection.commit()
-        print("Таблица категорий пользователей C_DATABASE создана")
+        print("Таблица категорий пользователей WORDS_CATEGORIES создана")
 
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Ошибка в блоке Creation_C: ", error)
+        print("Ошибка в блоке Creation_WORDS_CATEGORIES: ", error)
     finally:
         if (sqlite_connection):
             sqlite_connection.close()
@@ -86,60 +86,56 @@ def create_database_STATISTICS():
         if (sqlite_connection):
             sqlite_connection.close()
 
-def A_update(data_A, cursor, sqlite_connection):
+def FREQUENCY_update(product, category, cursor, sqlite_connection):
     try:
-        check_existance = """select word from A_DATABASE where word = ? AND category = ?"""
-        cursor.execute(check_existance, data_A)
+        check_existance = """select word from FREQUENCY where word = ? AND category = ?"""
+        cursor.execute(check_existance, (product, category))
         record = cursor.fetchall()
         if record == []:
-            sqlite_insert_A = """INSERT INTO A_DATABASE
+            sqlite_insert_FREQUENCY = """INSERT INTO FREQUENCY
                                     (word, category, frequency)
                                     VALUES (?, ?, ?);"""
-            data_A = (data_A[0], data_A[1], 1)
-            cursor.execute(sqlite_insert_A, data_A)
+            cursor.execute(sqlite_insert_FREQUENCY, (product, category, 1))
             sqlite_connection.commit()
         else:
-            sqlite_insert_A = """Update A_DATABASE set frequency = frequency + 1 where word = ? AND category = ?"""
-            cursor.execute(sqlite_insert_A, data_A)
+            sqlite_insert_FREQUENCY = """Update FREQUENCY set frequency = frequency + 1 where word = ? AND category = ?"""
+            cursor.execute(sqlite_insert_FREQUENCY, (product, category))
             sqlite_connection.commit()
     except sqlite3.Error as error:
-        print("Ошибка в блоке A_update: ", error)
+        print("Ошибка в блоке FREQUENCY_update: ", error)
 
-def B_update(data_B, cursor, sqlite_connection): #data_B = (id, category, money)
+def MONEY_update(user_id, category, price, cursor, sqlite_connection): #data_B = (id, category, money)
     try:
-        check_existance = """select category from B_DATABASE where id = ? AND category = ?"""
-        cursor.execute(check_existance, (data_B[0], data_B[1]))
+        check_existance = """select category from MONEY where id = ? AND category = ?"""
+        cursor.execute(check_existance, (user_id, category))
         record = cursor.fetchall()
         if record == []:
-            sqlite_insert_B = """INSERT INTO B_DATABASE
+            sqlite_insert_MONEY = """INSERT INTO MONEY
                               (id, category, money_spent, last_change_month)
                               VALUES (?, ?, ?, ?);"""
-            data_B = (data_B[0], data_B[1], data_B[2], month_today(cursor, sqlite_connection))
-            cursor.execute(sqlite_insert_B, data_B)
+            cursor.execute(sqlite_insert_MONEY, (user_id, category, price, month_today(cursor, sqlite_connection)))
             sqlite_connection.commit()
         else:
-            payment(data_B, 0, cursor, sqlite_connection)
+            payment(user_id, category, price, 0, cursor, sqlite_connection)
     except sqlite3.Error as error:
-        print("Ошибка в блоке B_update: ", error)
+        print("Ошибка в блоке MONEY_update: ", error)
 
-def insert_new_category(data_tuple):   #data = (user_id, категория, продукт, цена)
+def insert_new_category(user_id, category, product, price):   #data = (user_id, категория, продукт, цена)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
         
-        sqlite_insert_C = """INSERT INTO C_DATABASE
+        sqlite_insert_WORDS_CATEGORIES = """INSERT INTO WORDS_CATEGORIES
                               (id, word, category)
                               VALUES (?, ?, ?);"""
-        data_C = (data_tuple[0], data_tuple[2], data_tuple[1])
+        data_WORDS_CATEGORIES = (user_id, product, category)
 
-        cursor.execute(sqlite_insert_C, data_C)
+        cursor.execute(sqlite_insert_WORDS_CATEGORIES, data_WORDS_CATEGORIES)
         sqlite_connection.commit()
 
-        data_A = (data_tuple[2], data_tuple[1])
-        A_update(data_A, cursor, sqlite_connection)
+        FREQUENCY_update(product, category, cursor, sqlite_connection)
 
-        data_B = (data_tuple[0], data_tuple[1], data_tuple[3])
-        B_update(data_B, cursor, sqlite_connection)
+        MONEY_update(user_id, category, price, cursor, sqlite_connection)
 
         cursor.close()
 
@@ -149,23 +145,19 @@ def insert_new_category(data_tuple):   #data = (user_id, категория, п�
         if sqlite_connection:
             sqlite_connection.close()
 
-def add_product_to_category(data_tuple):   #data = (user_id, категория, продукт, цена)
+def add_product_to_category(user_id, category, product, price):   #data = (user_id, категория, продукт, цена)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
         
-        sqlite_insert_C = """INSERT INTO C_DATABASE
+        sqlite_insert_WORDS_CATEGORIES = """INSERT INTO WORDS_CATEGORIES
                               (id, word, category)
                               VALUES (?, ?, ?);"""
 
-        data_C = (data_tuple[0], data_tuple[2], data_tuple[1])
-
-        cursor.execute(sqlite_insert_C, data_C)
+        cursor.execute(sqlite_insert_WORDS_CATEGORIES, (user_id, product, category))
         sqlite_connection.commit()
 
-
-        data_A = (data_tuple[2], data_tuple[1])
-        A_update(data_A, cursor, sqlite_connection)
+        FREQUENCY_update(product, category, cursor, sqlite_connection)
 
         cursor.close()
 
@@ -174,34 +166,33 @@ def add_product_to_category(data_tuple):   #data = (user_id, категория,
     finally:
         if sqlite_connection:
             sqlite_connection.close()
-        payment((data_tuple[0], data_tuple[1], data_tuple[3]))
+        payment(user_id, category, price)
 
-def change_category_name_DATABASE(data):
+def change_category_name_DATABASE(user_id, old_category, new_category, words):  #data1 = (id, название старой категории, название новой, список слов сменяемой категории)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        sql_update_query = """Update B_DATABASE set category = ? where id = ? AND category = ?"""
-        update_data = (data[2], data[0], data[1])
-        cursor.execute(sql_update_query, update_data)
+        NONEY_update_query = """Update MONEY set category = ? where id = ? AND category = ?"""
+        cursor.execute(NONEY_update_query, (new_category, user_id, old_category))
         sqlite_connection.commit()
 
-        sql_update_query = """Update C_DATABASE set category = ? where id = ? AND category = ?"""
-        cursor.execute(sql_update_query, update_data)
+        WORDS_CATEGORIES_update_query = """Update WORDS_CATEGORIES set category = ? where id = ? AND category = ?"""
+        cursor.execute(WORDS_CATEGORIES_update_query, (new_category, user_id, old_category))
         sqlite_connection.commit()
         
         words_to_update = []
-        for word in data[3]:                                   #создаём список слов для обновления которые переходят из старой категории (data[1]) в новую (data[2])
-            words_to_update.append((data[1], word))
+        for word in words:                                   #создаём список слов для обновления которые переходят из старой категории в новую 
+            words_to_update.append((old_category, word))
         
-        sql_update_query = """Update A_DATABASE set frequency = frequency - 1 where category = ? AND word = ?"""
-        cursor.executemany(sql_update_query, words_to_update)                                                     #понижаем частоту слов, так как у них поменялась категория
+        FREQUENCY_update_query = """Update FREQUENCY set frequency = frequency - 1 where category = ? AND word = ?"""
+        cursor.executemany(FREQUENCY_update_query, words_to_update)                                                     #понижаем частоту слов, так как у них поменялась категория
         sqlite_connection.commit()
 
         cleaning(cursor, sqlite_connection) #чистим таблицу от нулевых частот
 
-        for word in data[3]:                         #обновление статистики по новой категории 
-            A_update((word, data[2]), cursor, sqlite_connection)
+        for word in words:                         #обновление статистики по новой категории 
+            FREQUENCY_update(word, category, cursor, sqlite_connection)
         
         cursor.close()
     except sqlite3.Error as error:
@@ -210,24 +201,24 @@ def change_category_name_DATABASE(data):
         if sqlite_connection:
             sqlite_connection.close()
 
-def change_name_category_DATABASE(data): #data = (id, слово, название старой категории, название новой категории)
+def change_name_category_DATABASE(user_id, word, old_category, new_category): #data = (id, слово, название старой категории, название новой категории)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        sql_update_query = """Update C_DATABASE set category = ? where id = ? AND word = ?"""
-        cursor.execute(sql_update_query, (data[3], data[0], data[1]))
+        WORDS_CATEGORIES_update_query = """Update WORDS_CATEGORIES set category = ? where id = ? AND word = ?"""
+        cursor.execute(WORDS_CATEGORIES_update_query, (new_category, user_id, word))
         sqlite_connection.commit()
         
-        words_to_update = [(data[2], data[1])]
+        words_to_update = [(old_category, word)]
         
-        sql_update_query = """Update A_DATABASE set frequency = frequency - 1 where category = ? AND word = ?"""
-        cursor.executemany(sql_update_query, words_to_update)                                                     #понижаем частоту слова, так как у него поменялась категория
+        FREQUENCY_update_query = """Update FREQUENCY set frequency = frequency - 1 where category = ? AND word = ?"""
+        cursor.executemany(FREQUENCY_update_query, words_to_update)                                                     #понижаем частоту слова, так как у него поменялась категория
         sqlite_connection.commit()
 
         cleaning(cursor, sqlite_connection) #чистим таблицу от нулевых частот
 
-        A_update((data[1], data[3]), cursor, sqlite_connection)        #обновление статистики по новой категории 
+        FREQUENCY_update(product, category, cursor, sqlite_connection)        #обновление статистики по новой категории 
         
         cursor.close()
     except sqlite3.Error as error:
@@ -236,21 +227,20 @@ def change_name_category_DATABASE(data): #data = (id, слово, названи
         if sqlite_connection:
             sqlite_connection.close()
 
-def payment(data, flag = 1, cursor = 0, sqlite_connection = 0): #data1 = (user_id, категория, цена)
+def payment(user_id, category, price, flag = 1, cursor = 0, sqlite_connection = 0): #data1 = (user_id, категория, цена)
     try:
         if flag == 1:
             sqlite_connection = sqlite3.connect('DATABASE.db')
             cursor = sqlite_connection.cursor()
 
-        money_selection = """select money_spent from B_DATABASE where id = ? AND category = ?"""
-        cursor.execute(money_selection, (data[0], data[1],))
+        money_selection = """select money_spent from MONEY where id = ? AND category = ?"""
+        cursor.execute(money_selection, (user_id, category,))
         record = cursor.fetchall()
         money = record[0][0]
 
-        sql_update_query = """Update B_DATABASE set money_spent = ?, last_change_month = ? where id = ? and category = ?"""
-        money += data[2]
-        update_data = (money, month_today(cursor, sqlite_connection), data[0], data[1])
-        cursor.execute(sql_update_query, update_data)
+        MONEY_update_query = """Update MONEY set money_spent = ?, last_change_month = ? where id = ? and category = ?"""
+        money += price
+        cursor.execute(MONEY_update_query, (money, month_today(cursor, sqlite_connection), user_id, category))
         sqlite_connection.commit()
         if flag == 1:
             cursor.close()
@@ -267,8 +257,8 @@ def get_dict(id):
         cursor = sqlite_connection.cursor()
 
         user_dict = dict()
-        sql_select_query = """select word, category from C_DATABASE where id = ?"""
-        cursor.execute(sql_select_query, (id,))
+        WORDS_CATEGORIES_select_query = """select word, category from WORDS_CATEGORIES where id = ?"""
+        cursor.execute(WORDS_CATEGORIES_select_query, (id,))
         records = cursor.fetchall()
         for row in records:
             if row[1] not in user_dict.keys():
@@ -289,9 +279,8 @@ def update_category(id, category_to_update, new_category):
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        sql_update_query = """Update C_DATABASE set category = ? where id = ? and category = ?"""
-        data = (new_category, id, category_to_update)
-        cursor.execute(sql_update_query, data)
+        WORDS_CATEGORIES_update_query = """Update WORDS_CATEGORIES set category = ? where id = ? and category = ?"""
+        cursor.execute(WORDS_CATEGORIES_update_query, (new_category, id, category_to_update))
         sqlite_connection.commit()
         cursor.close()
 
@@ -308,12 +297,12 @@ def timecheck():
 
         current_month = month_today(cursor, sqlite_connection)
 
-        sql_select_query = """SELECT id FROM B_DATABASE where last_change_month = ?"""
-        cursor.execute(sql_select_query, (current_month,))
+        MONEY_select_query = """SELECT id FROM MONEY where last_change_month = ?"""
+        cursor.execute(MONEY_select_query, (current_month,))
         records = cursor.fetchall()
         if records == []:
-            sql_select_query = """SELECT * FROM B_DATABASE"""
-            cursor.execute(sql_select_query)
+            MONEY_select_query = """SELECT * FROM MONEY"""
+            cursor.execute(MONEY_select_query)
             records = cursor.fetchall()
             for row in records:
                 check_existance = """select id from STATISTICS where id = ? and category = ? and month = ?"""
@@ -333,8 +322,8 @@ def timecheck():
                     cursor.execute(sqlite_update_STATISTICS, data)
                     sqlite_connection.commit()
 
-            sqlite_update_B = """Update B_DATABASE set money_spent = 0 """
-            cursor.execute(sqlite_update_B)
+            sqlite_update_MONEY = """Update MONEY set money_spent = 0 """
+            cursor.execute(sqlite_update_MONEY)
             sqlite_connection.commit()
         
         cursor.close()
@@ -352,7 +341,7 @@ def otchet():
 
         table = 'База данных по статистике\n \nслово\t\tкатегория\tчастота \n'
 
-        sql_select_query = """SELECT * FROM A_DATABASE"""
+        sql_select_query = """SELECT * FROM FREQUENCY"""
         cursor.execute(sql_select_query)
         records = cursor.fetchall()
 
@@ -362,7 +351,7 @@ def otchet():
 
         table += '\nБаза данных по денежным тратам\n \nid\t\tкатегория\tпотраченные деньги \n'
 
-        sql_select_query = """SELECT * FROM B_DATABASE"""
+        sql_select_query = """SELECT * FROM MONEY"""
         cursor.execute(sql_select_query)
         records = cursor.fetchall()
 
@@ -372,7 +361,7 @@ def otchet():
 
         table += '\nБаза данных по статистике\n \nid\t\tслово\t\tкатегория \n'
 
-        sql_select_query = """SELECT * FROM C_DATABASE"""
+        sql_select_query = """SELECT * FROM WORDS_CATEGORIES"""
         cursor.execute(sql_select_query)
         records = cursor.fetchall()
 
@@ -394,10 +383,13 @@ def delete_user(id):
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        sql_delete_query = """DELETE from B_DATABASE where id = ?"""
+        sql_delete_query = """DELETE from MONEY where id = ?"""
         cursor.execute(sql_delete_query, (id, ))
         sqlite_connection.commit()
-        sql_delete_query = """DELETE from C_DATABASE where id = ?"""
+        sql_delete_query = """DELETE from WORDS_CATEGORIES where id = ?"""
+        cursor.execute(sql_delete_query, (id, ))
+        sqlite_connection.commit()
+        sql_delete_query = """DELETE from STATISTICS where id = ?"""
         cursor.execute(sql_delete_query, (id, ))
         sqlite_connection.commit()
         cursor.close()
@@ -410,24 +402,27 @@ def delete_user(id):
 
 def cleaning(cursor, sqlite_connection):
     try:
-        sql_delete_query = """DELETE from A_DATABASE where frequency = 0"""
+        sql_delete_query = """DELETE from FREQUENCY where frequency = 0"""
         cursor.execute(sql_delete_query)
         sqlite_connection.commit()
 
     except sqlite3.Error as error:
         print("Ошибка в блоке cleaning: ", error)
 
-def delete_ALL():
+def delete_ALL(flag = 1):
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        A = """DELETE FROM A_DATABASE"""
-        B = """DELETE FROM B_DATABASE"""
-        C = """DELETE FROM C_DATABASE"""
-        cursor.execute(A)
-        cursor.execute(B)
-        cursor.execute(C)
+        FREQUENCY = """DELETE FROM FREQUENCY"""
+        MONEY = """DELETE FROM MONEY"""
+        WORDS_CATEGORIES = """DELETE FROM WORDS_CATEGORIES"""
+        STATISTICS = """DELETE FROM STATISTICS"""
+        cursor.execute(FREQUENCY)
+        cursor.execute(MONEY)
+        cursor.execute(MONEY)
+        if flag == 1:
+            cursor.execute(STATISTICS)
         sqlite_connection.commit()
         print("ВСЕ записи успешно удалены")
         cursor.close()
@@ -471,3 +466,10 @@ def check():
 
 if __name__ == '__main__':
     timecheck()
+
+    #insert_new_category(999900000, 'food', 'bread', 100)
+    #insert_new_category(999900000, 'food', 'apple', 50)
+    #insert_new_category(999900000, 'drink', 'cola', 50)
+    #insert_new_category(999911111, 'food', 'bread', 90)
+    #insert_new_category(999911111, 'other', 'glue', 500)
+    #insert_new_category(999911111, 'drink', 'milk', 80)
