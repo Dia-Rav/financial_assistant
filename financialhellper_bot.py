@@ -154,7 +154,7 @@ def get_name_for_rename(msg):
 
 @bot.message_handler(commands = ['delete_purchase'])
 def get_name_for_delete_purchase(message):
-    purchase_delete = bot.send_message(message.from_user.id, "перешли сообщение с покупкой, которую нужно удалить или ответь на него любым текстом")
+    purchase_delete = bot.send_message(message.from_user.id, "ответь на сообщение с покупкой чем твоей душе угодно")
     bot.register_next_step_handler(purchase_delete, deleting_purchase)
 def deleting_purchase(msg):
     if msg.forward_from != None:
@@ -168,6 +168,7 @@ def deleting_purchase(msg):
         except:
             product = None
             bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+        print (msg)
         DATABASE.delete_purchase(msg.from_user.id, product, price)
         bot.send_message(msg.from_user.id, "Отлично")
     elif msg.reply_to_message != None :
@@ -181,11 +182,13 @@ def deleting_purchase(msg):
         except:
             product = None
             bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+        bot.delete_message(msg.from_user.id, msg.reply_to_message.id)
         DATABASE.delete_purchase(msg.from_user.id, product, price)
         bot.send_message(msg.from_user.id, "Отлично")
+        
     else:
         bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
     
-    
+
 DATABASE.timecheck()
 bot.polling(none_stop=True, interval=0)
