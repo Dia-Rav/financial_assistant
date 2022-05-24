@@ -10,7 +10,6 @@ class user:
         self.user_id = id 
         self.date_of_start = date_of_start
         self.categories = DATABASE.get_dict(id)
-        print(self.categories)
         global users_in_contact
         users_in_contact[id]  = self
         return
@@ -26,8 +25,6 @@ def check_user_category(user_id, product, price):
     categories = current_user.categories
     for key, products in categories.items():
         if product in products:
-            data1 = (user_id, key, product, price)
-            print (data1)
             DATABASE.payment(user_id, key, price)
             DATABASE.otchet()
             return True
