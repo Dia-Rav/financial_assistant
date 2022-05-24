@@ -2,8 +2,8 @@ import telebot
 from telebot import types
 import DATABASE 
 import user_class
-import asyncio
 from datetime import date
+import re
 
 
 tmp_data = None
@@ -16,10 +16,8 @@ bot = telebot.TeleBot(token_bot)
 @bot.message_handler(commands=['help'])
 def print_help(message):
         bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
-/report_for_month - количество денег, потраченных за текущий месяц \n \
-/report_for_year - количество денег, потраченных за текущий год \n \
 /change_category_name - сменить название категории\n \
-/change_name_category - сменить категорию для продукта")
+/change_category_of_product - сменить категорию для продукта")
 
 def processing_purchase(user_id, product, price):
     if user_class.check_user_category(user_id, product, price):
@@ -44,29 +42,25 @@ def get_category_for_new_purchase(message):
 
 @bot.message_handler(commands = ['new'])
 def get_new_bought(message):
-    bot.send_message(message.from_user.id, "Расскажи о покупке в формате: цена название")\
-
+    bot.send_message(message.from_user.id, "Расскажи о покупке через пробел (цена вводится с точкой)")
     @bot.message_handler(content_types = "text")
-    def get_category(msg):
+    def get_bought(msg):
         user_id = message.from_user.id
-        new_bought = [user_id]
-        new_bought_tmp = msg.text.split()
-        #Добиваюсь корректного ввода от пользователя
-        if len(new_bought_tmp) != 2: #Ввел не по шаблону
-            new_bought_tmp = []
-            bot.send_message(message.from_user.id, "Что-то тут не так. Давай еще раз")
-        else:  #Ввел по шаблону, обрабатываю списки вида [("int,"; "str)"]
-            try:
-                new_bought_tmp[0] = float(new_bought_tmp[0])  # Вместо цены какой-то бред
-            except:
-                new_bought_tmp = []
-                bot.send_message(message.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
+        try:
+            price = float(re.search(r'(\d|\.)+', msg.text).group(0))
+        except:
+            price = None
+            bot.send_message(msg.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
+        try:
+            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
+        except:
+            product = None
+            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
 
-            if new_bought_tmp:
-                 new_bought.extend(new_bought_tmp)
+        #Добиваюсь корректного ввода от пользователя
+        if product!=None and price !=None:
                  bot.send_message(message.from_user.id, 
-                 "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(new_bought[1]),
-                                                        new_bought[2]))
+                 "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(price),product))
                  keyboard_new_bought = types.InlineKeyboardMarkup()  # наша клавиатура
                  key_yes_knb = types.InlineKeyboardButton(text='Да', callback_data='yes')  # кнопка «Да»
                  keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
@@ -75,23 +69,19 @@ def get_new_bought(message):
                  question_knb = 'Верно?'
                  bot.send_message(message.from_user.id, text=question_knb, reply_markup=keyboard_new_bought)
                  global new_purchase
-                 new_purchase = (new_bought[0], new_bought[2], new_bought[1])
+                 new_purchase = (product, price)
                  @bot.callback_query_handler(func=lambda call: True)
                  def query_handler(call):
                      bot.answer_callback_query(callback_query_id=call.id, text='Спасибо за ответ!')
                      answer = ''
                      if call.data == 'yes':
                         data = new_purchase
-                        processing_purchase(message.from_user.id, data[1], data[2])
+                        processing_purchase(message.from_user.id, data[0], data[1])
                      elif call.data == 'no':
-                         answer = 'Попробуем снова?'
-                         
+                         answer = 'Попробуем снова?'                         
                          bot.send_message(call.message.chat.id, answer)
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-                     
-
-
-               #После положительного ансвера отправим в основноем меню как в начале
+                   #После положительного ансвера отправим в основноем меню как в начале
 
 @bot.message_handler(commands = ['report_for_month'])
 def report_for_month(message):
@@ -122,7 +112,6 @@ def change_category_name(message):
     old = bot.send_message(message.from_user.id, "имя какой категории нужно поменять?")
     bot.register_next_step_handler(old, get_old_category)
 
-
 def get_old_category(msg):
     user_id = msg.from_user.id
     global tmp_data
@@ -139,7 +128,7 @@ def get_category_for_rename(msg):
         bot.send_message(msg.from_user.id, 'такой категории нет')
         print_help(msg)
 
-@bot.message_handler(commands = ['change_name_category'])
+@bot.message_handler(commands = ['change_category_of_product'])
 def change_name_category(message):
     old = bot.send_message(message.from_user.id, "какую категории нужно поменять?")
     bot.register_next_step_handler(old, get_old_name_category)
@@ -163,6 +152,14 @@ def get_name_for_rename(msg):
     bot.send_message(msg.from_user.id, "что-то еще?")
     user_class.change_name_category(msg.from_user.id, msg.text, tmp_data[0], tmp_data[1])
 
+@bot.message_handler(commands = ['delete_purchase'])
+def get_name_for_delete_purchase(message):
+    purchase_delete = bot.send_message(message.from_user.id, "перешли сообщение с покупкой, которую нужно удалить")
+    bot.register_next_step_handler(purchase_delete, get_old_category)
 
-bot.polling(none_stop=True, interval=0)
+def deleting_purchase(message):
+    pass
+
+    
 DATABASE.timecheck()
+bot.polling(none_stop=True, interval=0)

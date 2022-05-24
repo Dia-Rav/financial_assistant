@@ -484,6 +484,7 @@ def check():
             sqlite_connection.close()
 
 if __name__ == '__main__':
+    pass
     #timecheck()
     #delete_purchase(999900000, 'bread', 100)
     #insert_new_category(999900000, 'food', 'bread', 100)
