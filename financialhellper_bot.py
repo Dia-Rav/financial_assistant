@@ -123,14 +123,14 @@ def get_category_for_rename(msg):
     global tmp_data    
     if user_class.change_category_name(msg.from_user.id, tmp_data, msg.text):
         bot.send_message(msg.from_user.id, 'Здорово! Что-то еще?')
-        print_help(message)
+        print_help(msg)
     else:
         bot.send_message(msg.from_user.id, 'такой категории нет')
         print_help(msg)
 
 @bot.message_handler(commands = ['change_category_of_product'])
 def change_name_category(message):
-    old = bot.send_message(message.from_user.id, "какую категории нужно поменять?")
+    old = bot.send_message(message.from_user.id, "какую категорию нужно поменять?")
     bot.register_next_step_handler(old, get_old_name_category)
 
 def get_old_name_category(msg):
@@ -168,7 +168,7 @@ def deleting_purchase(msg):
         except:
             product = None
             bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
-        print (msg)
+
         DATABASE.delete_purchase(msg.from_user.id, product, price)
         bot.send_message(msg.from_user.id, "Отлично")
     elif msg.reply_to_message != None :
@@ -182,10 +182,10 @@ def deleting_purchase(msg):
         except:
             product = None
             bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+
         bot.delete_message(msg.from_user.id, msg.reply_to_message.id)
         DATABASE.delete_purchase(msg.from_user.id, product, price)
         bot.send_message(msg.from_user.id, "Отлично")
-        
     else:
         bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
     
