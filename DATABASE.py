@@ -218,7 +218,7 @@ def change_name_category_DATABASE(user_id, word, old_category, new_category): #d
 
         cleaning(cursor, sqlite_connection) #чистим таблицу от нулевых частот
 
-        FREQUENCY_update(product, new_category, cursor, sqlite_connection)        #обновление статистики по новой категории 
+        FREQUENCY_update(word, new_category, cursor, sqlite_connection)        #обновление статистики по новой категории 
         
         cursor.close()
     except sqlite3.Error as error:
