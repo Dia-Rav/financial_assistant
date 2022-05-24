@@ -5,7 +5,6 @@ import user_class
 from datetime import date
 import re
 
-
 tmp_data = None
 new_purchase = ()
 
@@ -17,12 +16,12 @@ bot = telebot.TeleBot(token_bot)
 def print_help(message):
         bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
 /change_category_name - сменить название категории\n \
-/change_category_of_product - сменить категорию для продукта")
-
+/change_category_of_product - сменить категорию для продукта\n \
+/delete_purchase - удаление покупки")
+#обработка продукта, находит категорию или запрос к пользователю
 def processing_purchase(user_id, product, price):
     if user_class.check_user_category(user_id, product, price):
         bot.send_message(user_id, "мы нашли категорию для этого продукта")
-        print_help(user_id)
         return
     else: 
         global tmp_data 
@@ -30,7 +29,7 @@ def processing_purchase(user_id, product, price):
         mesg = bot.send_message(user_id, "в какую категорию отнести этот продукт?")
         bot.register_next_step_handler(mesg, get_category_for_new_purchase)
 
-
+#вызывается в случае отсутствия категории для продукта
 def get_category_for_new_purchase(message):
     global tmp_data
     answer = 'Здорово! Что-то еще?'
@@ -39,7 +38,7 @@ def get_category_for_new_purchase(message):
     user_class.add_to_category(message.from_user.id, message.text, tmp_data[1], tmp_data[2])
 
 
-
+#добавление новой покупки
 @bot.message_handler(commands = ['new'])
 def get_new_bought(message):
     bot.send_message(message.from_user.id, "Расскажи о покупке через пробел (цена вводится с точкой)")
@@ -83,30 +82,31 @@ def get_new_bought(message):
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
                    #После положительного ансвера отправим в основноем меню как в начале
 
-@bot.message_handler(commands = ['report_for_month'])
-def report_for_month(message):
-    id = message.from_user.id
-    date_today = date.today()
-    month_today = date_today.month
-    year_today = date_today.year
-    max_day = user_class.number_of_days_monthly[month_today-1]
-    if month_today == 2 and year_today % 4 == 0 :
-        max_day += 1
-    date1 = date(year_today, month_today, 1)
-    date2 = date(year_today, month_today, max_day)
-    total = str(DATABASE.get_the_amount_period (id, date1, date2))
-    bot.send_message(message.from_user.id, total)
+# @bot.message_handler(commands = ['report_for_month'])
+# def report_for_month(message):
+#     id = message.from_user.id
+#     date_today = date.today()
+#     month_today = date_today.month
+#     year_today = date_today.year
+#     max_day = user_class.number_of_days_monthly[month_today-1]
+#     if month_today == 2 and year_today % 4 == 0 :
+#         max_day += 1
+#     date1 = date(year_today, month_today, 1)
+#     date2 = date(year_today, month_today, max_day)
+#     total = str(DATABASE.get_the_amount_period (id, date1, date2))
+#     bot.send_message(message.from_user.id, total)
 
-@bot.message_handler(commands = ['report_for_year'])
-def report_for_month(message):
-    id = message.from_user.id
-    date_today = date.today()
-    year_today = date_today.year
-    date1 = date(year_today, 1, 1)
-    date2 = date(year_today, 12, 31)
-    total = str(DATABASE.get_the_amount_period (id, date1, date2))
-    bot.send_message(message.from_user.id, total)
+# @bot.message_handler(commands = ['report_for_year'])
+# def report_for_month(message):
+#     id = message.from_user.id
+#     date_today = date.today()
+#     year_today = date_today.year
+#     date1 = date(year_today, 1, 1)
+#     date2 = date(year_today, 12, 31)
+#     total = str(DATABASE.get_the_amount_period (id, date1, date2))
+#     bot.send_message(message.from_user.id, total)
 
+#позволяет менять название категории (последующие две функции вызываются цепочкой)
 @bot.message_handler(commands = ['change_category_name'])
 def change_category_name(message):
     old = bot.send_message(message.from_user.id, "имя какой категории нужно поменять?")
@@ -148,18 +148,44 @@ def get_new_name_category(msg):
 
 def get_name_for_rename(msg):
     global tmp_data
-    #data = (id, слово, название старой категории, название новой категории)
     bot.send_message(msg.from_user.id, "что-то еще?")
+    print_help(msg)
     user_class.change_name_category(msg.from_user.id, msg.text, tmp_data[0], tmp_data[1])
 
 @bot.message_handler(commands = ['delete_purchase'])
 def get_name_for_delete_purchase(message):
-    purchase_delete = bot.send_message(message.from_user.id, "перешли сообщение с покупкой, которую нужно удалить")
-    bot.register_next_step_handler(purchase_delete, get_old_category)
-
-def deleting_purchase(message):
-    pass
-
+    purchase_delete = bot.send_message(message.from_user.id, "перешли сообщение с покупкой, которую нужно удалить или ответь на него любым текстом")
+    bot.register_next_step_handler(purchase_delete, deleting_purchase)
+def deleting_purchase(msg):
+    if msg.forward_from != None:
+        try:
+            price = float(re.search(r'(\d|\.)+', msg.text).group(0))
+        except:
+            price = None
+            bot.send_message(msg.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
+        try:
+            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
+        except:
+            product = None
+            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+        DATABASE.delete_purchase(msg.from_user.id, product, price)
+        bot.send_message(msg.from_user.id, "Отлично")
+    elif msg.reply_to_message != None :
+        try:
+            price = float(re.search(r'(\d|\.)+', msg.reply_to_message.text).group(0))
+        except:
+            price = None
+            bot.send_message(msg.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
+        try:
+            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.reply_to_message.text).group(0))
+        except:
+            product = None
+            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+        DATABASE.delete_purchase(msg.from_user.id, product, price)
+        bot.send_message(msg.from_user.id, "Отлично")
+    else:
+        bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
+    
     
 DATABASE.timecheck()
 bot.polling(none_stop=True, interval=0)

@@ -28,7 +28,7 @@ def check_user_category(user_id, product, price):
         if product in products:
             data1 = (user_id, key, product, price)
             print (data1)
-            DATABASE.payment(user_id, key, product, price)
+            DATABASE.payment(user_id, key, price)
             DATABASE.otchet()
             return True
     return False
