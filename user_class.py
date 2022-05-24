@@ -1,6 +1,6 @@
 import DATABASE
 from datetime import date
-
+import re
 users_in_contact = {}
 
 class user:
@@ -10,6 +10,7 @@ class user:
         self.user_id = id 
         self.date_of_start = date_of_start
         self.categories = DATABASE.get_dict(id)
+        print(self.categories)
         global users_in_contact
         users_in_contact[id]  = self
         return
@@ -28,6 +29,7 @@ def check_user_category(user_id, product, price):
             data1 = (user_id, key, product, price)
             print (data1)
             DATABASE.payment(user_id, key, product, price)
+            DATABASE.otchet()
             return True
     return False
 
@@ -36,6 +38,7 @@ def change_category_name(user_id, old_category, new_category_text):
     current_user = users_in_contact.get(user_id, user(user_id))
     if old_category in current_user.categories:
         DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]))
+        DATABASE.otchet()
         current_user.categories[new_category_text] = current_user.categories[old_category]
         del current_user.categories[old_category]
         return True
@@ -62,6 +65,7 @@ def change_name_category(user_id, purchase, old_category, new_category_text):
         current_user.categories[new_category_text] = tuple(current_user.categories[new_category_text])
         current_user.categories[old_category] = tuple(current_user.categories[old_category])
         DATABASE.change_name_category_DATABASE(user_id, purchase, old_category, new_category_text)
+        DATABASE.otchet()
     else:
         current_user.categories[old_category] = (purchase)
         new_category(current_id, new_category_text, purchase, 0)
@@ -72,6 +76,7 @@ def new_category(user_id, category, product, price):#(user_id, категори�
     current_user = users_in_contact.get(user_id, user(user_id))
     current_user.categories[category] = (product)
     DATABASE.insert_new_category(user_id, category, product, price)
+    DATABASE.otchet()
     return
 
 def add_to_category(user_id, category, product, price):
@@ -83,10 +88,11 @@ def add_to_category(user_id, category, product, price):
             current_user.categories[category].append(prod)
         current_user.categories[category] = tuple(current_user.categories[category])
         DATABASE.add_product_at_category(user_id, category, product, price)
+        DATABASE.otchet()
         pass 
     else:
-        new_category(data)
+        new_category(user_id, category, product, price)
 
-#
+
 number_of_days_monthly = [31, 28, 31, 30, 31, 30 ,31, 31, 30, 31, 30, 31]
-DATABASE.otchet()
+#DATABASE.otchet()
