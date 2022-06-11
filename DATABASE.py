@@ -173,8 +173,8 @@ def change_category_name_DATABASE(user_id, old_category, new_category, words):  
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        NONEY_update_query = """Update MONEY set category = ? where id = ? AND category = ?"""
-        cursor.execute(NONEY_update_query, (new_category, user_id, old_category))
+        MONEY_update_query = """Update MONEY set category = ? where id = ? AND category = ?"""
+        cursor.execute(MONEY_update_query, (new_category, user_id, old_category))
         sqlite_connection.commit()
 
         WORDS_CATEGORIES_update_query = """Update WORDS_CATEGORIES set category = ? where id = ? AND category = ?"""
@@ -201,7 +201,7 @@ def change_category_name_DATABASE(user_id, old_category, new_category, words):  
         if sqlite_connection:
             sqlite_connection.close()
 
-def change_name_category_DATABASE(user_id, word, old_category, new_category): #data = (id, слово, название старой категории, название новой категории)
+def change_name_category_DATABASE(user_id, word, old_category, new_category, price = 0): #data = (id, слово, название старой категории, название новой категории)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
@@ -210,6 +210,8 @@ def change_name_category_DATABASE(user_id, word, old_category, new_category): #d
         cursor.execute(WORDS_CATEGORIES_update_query, (new_category, user_id, word))
         sqlite_connection.commit()
         
+        MONEY_update(user_id, new_category, price, cursor, sqlite_connection)
+
         words_to_update = [(old_category, word)]
         
         FREQUENCY_update_query = """Update FREQUENCY set frequency = frequency - 1 where category = ? AND word = ?"""
