@@ -17,7 +17,12 @@ def print_help(message):
         bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
 /change_category_name - сменить название категории\n \
 /change_category_of_product - сменить категорию для продукта\n \
-/delete_purchase - удаление покупки")
+/delete_purchase - удаление покупки\n \
+/report_for_month - отчет по тратам за любой месяц последнего года\n \
+/report_for_period - отчет по тратам за несколько месяцев последнего года\n \
+/report_for_current_month - отчет по тратам за текущий месяц\n \
+/report_for_current_year - отчет по тратам за год\n \
+")
 #обработка продукта, находит категорию или спрашивает пользователя
 def processing_purchase(user_id, product, price):
     if user_class.check_user_category(user_id, product, price):
