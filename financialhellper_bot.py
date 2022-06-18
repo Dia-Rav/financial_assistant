@@ -82,29 +82,34 @@ def get_new_bought(message):
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
                    #После положительного ансвера отправим в основноем меню как в начале
 
-# @bot.message_handler(commands = ['report_for_month'])
-# def report_for_month(message):
-#     id = message.from_user.id
-#     date_today = date.today()
-#     month_today = date_today.month
-#     year_today = date_today.year
-#     max_day = user_class.number_of_days_monthly[month_today-1]
-#     if month_today == 2 and year_today % 4 == 0 :
-#         max_day += 1
-#     date1 = date(year_today, month_today, 1)
-#     date2 = date(year_today, month_today, max_day)
-#     total = str(DATABASE.get_the_amount_period (id, date1, date2))
-#     bot.send_message(message.from_user.id, total)
+@bot.message_handler(commands = ['report_for_month'])
+def report_for_month(message):
+    id = message.from_user.id
+    bot.send_message(id, "Напиши номер месяца, о котором хочешь узнать (статистика доступна за последний год)")
+    bot.register_next_step_handler(mesg, get_statistics_for_month)
 
-# @bot.message_handler(commands = ['report_for_year'])
-# def report_for_month(message):
-#     id = message.from_user.id
-#     date_today = date.today()
-#     year_today = date_today.year
-#     date1 = date(year_today, 1, 1)
-#     date2 = date(year_today, 12, 31)
-#     total = str(DATABASE.get_the_amount_period (id, date1, date2))
-#     bot.send_message(message.from_user.id, total)
+def get_statistics_for_month(mesg):
+    try:
+        print (DATABASE.month_money_statistics(mesg.from_user.id, int(mesg.text)))
+    except:
+        bot.send_message(id, "неверный ввод")
+    
+bot.message_handler(commands = ['report_for_period'])
+def report_for_month(message):
+    id = message.from_user.id
+    bot.send_message(id, "Напиши номер месяца, начиная с которого ты хочешь узнать статистику (статистика доступна за последний год)")
+    bot.register_next_step_handler(mesg, get_statistics_for_period_one)
+
+def get_statistics_for_period_one(mesg):
+    tmp_data = masg.text
+    bot.send_message(id, "Напиши номер месяца - конец периода")
+    bot.register_next_step_handler(mesg, get_statistics_for_period_two)
+
+def get_statistics_for_period_two(mesg):
+    try:
+        print (DATABASE.year_money_statistics(mesg.from_user.id, int(tmp_data), int(mesg.text)))
+    except:
+        bot.send_message(id, "неверный ввод")
 
 #позволяет менять название категории (последующие две функции вызываются цепочкой)
 @bot.message_handler(commands = ['change_category_name'])
