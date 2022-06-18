@@ -21,7 +21,7 @@ def print_help(message):
 /report_for_month - отчет по тратам за любой месяц последнего года\n \
 /report_for_period - отчет по тратам за несколько месяцев последнего года\n \
 /report_for_current_month - отчет по тратам за текущий месяц\n \
-/report_for_current_year - отчет по тратам за год\n \
+/report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
 ")
 #обработка продукта, находит категорию или спрашивает пользователя
 def processing_purchase(user_id, product, price):
@@ -123,9 +123,13 @@ def report_for_month(message):
     bot.register_next_step_handler(mesg, get_statistics_for_month)
 def get_statistics_for_month(mesg):
     try:
-        print (DATABASE.month_money_statistics(mesg.from_user.id, int(mesg.text)))
+        information = DATABASE.month_money_statistics(mesg.from_user.id, int(mesg.text))
+        statictics = ''
+        for data in information:
+            statictics += "{}: {} р.\n".format(data[0],data[1])
+        bot.send_message(mesg.from_user.id, statictics)
     except:
-        bot.send_message(id, "неверный ввод")
+        bot.send_message(mesg.from_user.id, "информации нет")
     
 bot.message_handler(commands = ['report_for_period'])
 def report_for_period(message):
@@ -151,13 +155,22 @@ def get_statistics_for_period_two(mesg):
 def report_for_current_month(message):
     DATABASE.timecheck()
     id = message.from_user.id
-    print (DATABASE.current_month_money_statistics(id))
+    information = DATABASE.current_month_money_statistics(id)
+    statictics = ''
+    for data in information:
+        statictics += "{}: {} р.\n".format(data[0],data[1])
+    bot.send_message(message.from_user.id, statictics)
+        
 
 @bot.message_handler(commands = ['report_for_current_year'])
 def report_for_current_year(message):
     DATABASE.timecheck()
     id = message.from_user.id
-    print (DATABASE.year_money_statistics(id))
+    information = DATABASE.year_money_statistics(id)
+    statictics = ''
+    for key, value in information.items():
+        statictics += "{}: {} р.\n".format(key, value)
+    bot.send_message(message.from_user.id, statictics)
 
 #позволяет менять название категории (последующие две функции вызываются цепочкой)
 @bot.message_handler(commands = ['change_category_name'])

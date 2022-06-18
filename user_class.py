@@ -71,7 +71,7 @@ def new_category(user_id, category, product, price):#(user_id, категори�
     DATABASE.otchet()
     return
 
-def add_to_category(user_id, caegory, product, price):
+def add_to_category(user_id, category, product, price):
     current_user = users_in_contact.get(user_id, user(user_id))
     if category in current_user.categories:
         products = current_user.categories[category]
