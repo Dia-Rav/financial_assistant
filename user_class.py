@@ -7,6 +7,7 @@ class user:
     def __init__ (self, id, date_of_start = 1):
         #дата начала, чтобы, например, мы могли выдавать статистику за прошлые месяцы
         #(пока поставим начало месяца, но в будущем это, например, может быт день зп)
+        
         self.user_id = id 
         self.date_of_start = date_of_start
         self.categories = DATABASE.get_dict(id)
@@ -42,26 +43,20 @@ def change_category_name(user_id, old_category, new_category_text):
     else:
         return False
 
-def change_name_category(user_id, purchase, old_category, new_category_text):
-    #Входные данные data = (id, слово, название старой категории, название новой категории)
+def change_name_category(user_id, price, product, new_category_text):
     current_user = users_in_contact.get(user_id, user(user_id))
-    if old_category in current_user.categories:
-        products = list(current_user.categories[old_category])
-        current_user.categories[old_category] = []
-        for x in products:
-            if x == purchase:
-                if new_category_text in current_user.categories:
-                    other_products = current_user.categories[new_category_text]
-                    current_user.categories[new_category_text] = []
-                    for y in other_products:
-                        current_user.categories[new_category_text].append(y)
-                else:
-                    current_user.categories[new_category_text] = [purchase]
+    for old_cat, products in categories.items():
+        if product in products:
+            old_category = old.cat
+            if new_category_text in current_user.categories:
+                other_products = current_user.categories[new_category_text]
+                current_user.categories[new_category_text] = []
+                for y in other_products:
+                    current_user.categories[new_category_text].append(y)
             else:
-                current_user.categories[old_category].append(x)
-        current_user.categories[new_category_text] = tuple(current_user.categories[new_category_text])
-        current_user.categories[old_category] = tuple(current_user.categories[old_category])
-        DATABASE.change_name_category_DATABASE(user_id, purchase, old_category, new_category_text)
+                current_user.categories[new_category_text] = [purchase]
+        #data = (id, слово, название старой категории, название новой категории, цена)
+        DATABASE.change_name_category_DATABASE(user_id, product, old_category, new_category_text, price)
         DATABASE.otchet()
     else:
         current_user.categories[old_category] = (purchase)
@@ -76,14 +71,14 @@ def new_category(user_id, category, product, price):#(user_id, категори�
     DATABASE.otchet()
     return
 
-def add_to_category(user_id, category, product, price):
+def add_to_category(user_id, caegory, product, price):
     current_user = users_in_contact.get(user_id, user(user_id))
     if category in current_user.categories:
         products = current_user.categories[category]
         current_user.categories[category] = []
         for prod in products:
             current_user.categories[category].append(prod)
-        current_user.categories[category] = tuple(current_user.categories[category])
+        current_user.categories[category] = current_user.categories[category]
         DATABASE.add_product_at_category(user_id, category, product, price)
         DATABASE.otchet()
         pass 

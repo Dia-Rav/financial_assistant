@@ -18,24 +18,53 @@ def print_help(message):
 /change_category_name - сменить название категории\n \
 /change_category_of_product - сменить категорию для продукта\n \
 /delete_purchase - удаление покупки")
-#обработка продукта, находит категорию или запрос к пользователю
+#обработка продукта, находит категорию или спрашивает пользователя
 def processing_purchase(user_id, product, price):
     if user_class.check_user_category(user_id, product, price):
         bot.send_message(user_id, "мы нашли категорию для этого продукта")
         return
     else: 
-        global tmp_data 
-        tmp_data = ((user_id, product, price))
-        mesg = bot.send_message(user_id, "в какую категорию отнести этот продукт?")
-        bot.register_next_step_handler(mesg, get_category_for_new_purchase)
+        category_offers = DATABASE.category_statistics(product)
+        if len(category_offers)>1:
+            creating_survey_about_category (user_id, category_offers, product, price)
+        else:
+            global new_purchase
+            new_purchase = (product, price) 
+            msg = bot.send_message(user_id, 'назови категорию для продукта')
+            bot.register_next_step_handler(msg, get_category_for_new_purchase)
+
+def creating_survey_about_category (user_id, category_offersm, product, price):
+    keyboard_categories = types.InlineKeyboardMarkup()  # наша клавиатура
+    for cat in category_offers:
+        key_knb = types.InlineKeyboardButton(text = cat, callback_data = cat)
+        keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
+    key_idk = types.InlineKeyboardButton(text = 'другое..', callback_data = 0)
+    keyboard_new_bought.add(key_idk)  # добавляем кнопку в клавиатуру
+    question_knb = 'выбери категорию'
+    bot.send_message(user_id, text=question_knb, reply_markup=keyboard_new_bought)
+    @bot.callback_query_handler(func=lambda call: True)
+    def query_handler(call):
+        bot.answer_callback_query(user_id, text='Спасибо за ответ!')
+        answer = ''
+        if call.data != 0:
+            print (call.data)
+        #(user_id, category, product, price)
+            user_class.add_to_category(user_id, call.data, product, price)
+            bot.edit_message_reply_markup(user_id, call.message.message_id)
+        else:  
+            bot.edit_message_reply_markup(user_id, call.message.message_id)   
+            global new_purchase 
+            new_purchase = (product, price)                 
+            msg = bot.send_message(user_id, 'назови свой вариант')
+            bot.register_next_step_handler(msg, get_category_for_new_purchase)
 
 #вызывается в случае отсутствия категории для продукта
 def get_category_for_new_purchase(message):
-    global tmp_data
-    answer = 'Здорово! Что-то еще?'
-    bot.send_message(message.from_user.id, answer)
+    global new_purchase
+    bot.send_message(message.from_user.id, 'Здорово! Что-то еще?')
     print_help(message)
-    user_class.add_to_category(message.from_user.id, message.text, tmp_data[1], tmp_data[2])
+    #(user_id, category, product, price)
+    user_class.add_to_category(message.from_user.id, message.text, new_purchase[0], new_purchase[1])
 
 
 #добавление новой покупки
@@ -80,14 +109,13 @@ def get_new_bought(message):
                          answer = 'Попробуем снова?'                         
                          bot.send_message(call.message.chat.id, answer)
                      bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-                   #После положительного ансвера отправим в основноем меню как в начале
 
+#позволяет получить статистику за определнный месяц
 @bot.message_handler(commands = ['report_for_month'])
 def report_for_month(message):
     id = message.from_user.id
-    bot.send_message(id, "Напиши номер месяца, о котором хочешь узнать (статистика доступна за последний год)")
+    mesg = bot.send_message(id, "Напиши номер месяца, о котором хочешь узнать (статистика доступна за последний год)")
     bot.register_next_step_handler(mesg, get_statistics_for_month)
-
 def get_statistics_for_month(mesg):
     try:
         print (DATABASE.month_money_statistics(mesg.from_user.id, int(mesg.text)))
@@ -95,29 +123,34 @@ def get_statistics_for_month(mesg):
         bot.send_message(id, "неверный ввод")
     
 bot.message_handler(commands = ['report_for_period'])
-def report_for_month(message):
+def report_for_period(message):
+    DATABASE.timecheck()
     id = message.from_user.id
-    bot.send_message(id, "Напиши номер месяца, начиная с которого ты хочешь узнать статистику (статистика доступна за последний год)")
+    mesg = bot.send_message(id, "Напиши номер месяца, начиная с которого ты хочешь узнать статистику (статистика доступна за последний год)")
     bot.register_next_step_handler(mesg, get_statistics_for_period_one)
 
 def get_statistics_for_period_one(mesg):
-    tmp_data = masg.text
-    bot.send_message(id, "Напиши номер месяца - конец периода")
+    global tmp_data
+    tmp_data = mesg.text
+    mesg = bot.send_message(id, "Напиши номер месяца - конец периода")
     bot.register_next_step_handler(mesg, get_statistics_for_period_two)
 
 def get_statistics_for_period_two(mesg):
+    global tmp_data
     try:
         print (DATABASE.year_money_statistics(mesg.from_user.id, int(tmp_data), int(mesg.text)))
     except:
         bot.send_message(id, "неверный ввод")
 
 @bot.message_handler(commands = ['report_for_current_month'])
-def report_for_month(message):
+def report_for_current_month(message):
+    DATABASE.timecheck()
     id = message.from_user.id
     print (DATABASE.current_month_money_statistics(id))
 
 @bot.message_handler(commands = ['report_for_current_year'])
-def report_for_month(message):
+def report_for_current_year(message):
+    DATABASE.timecheck()
     id = message.from_user.id
     print (DATABASE.year_money_statistics(id))
 
@@ -142,30 +175,50 @@ def get_category_for_rename(msg):
     else:
         bot.send_message(msg.from_user.id, 'такой категории нет')
         print_help(msg)
-
+#позволяет менять категорию для продукта
 @bot.message_handler(commands = ['change_category_of_product'])
-def change_name_category(message):
-    old = bot.send_message(message.from_user.id, "какую категорию нужно поменять?")
-    bot.register_next_step_handler(old, get_old_name_category)
 
 def get_old_name_category(msg):
     user_id = msg.from_user.id
-    global tmp_data
-    tmp_data = [msg.text]
-    new = bot.send_message(msg.from_user.id, "на какую?")
+    new = bot.send_message(msg.from_user.id, "на какую категорию надо поменять?")
     bot.register_next_step_handler(new, get_new_name_category)
 
 def get_new_name_category(msg):
     global tmp_data
-    tmp_data.append (msg.text)
-    new = bot.send_message(msg.from_user.id, "какой продукт?")
+    tmp_data = msg.text
+    new = bot.send_message(msg.from_user.id, "какой продукт? (ответь на сообщение с покупкой чем твоей душе угодно)")
     bot.register_next_step_handler(new, get_name_for_rename)
 
 def get_name_for_rename(msg):
-    global tmp_data
-    bot.send_message(msg.from_user.id, "что-то еще?")
+    if msg.forward_from != None:
+        try:
+            price = float(re.search(r'(\d|\.)+', msg.text).group(0))
+        except:
+            price = None
+            bot.send_message(msg.from_user.id, "Кажется, не подходит. Попробуй снова")
+        try:
+            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
+        except:
+            product = None
+            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+        user_class.change_name_category(msg.from_user.id, price, product, tmp_data)
+        bot.send_message(msg.from_user.id, "Отлично")
+    elif msg.reply_to_message != None :
+        try:
+            price = float(re.search(r'(\d|\.)+', msg.reply_to_message.text).group(0))
+        except:
+            price = None
+            bot.send_message(msg.from_user.id, "Кажется, это не подходит. Попробуй снова")
+        try:
+            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.reply_to_message.text).group(0))
+        except:
+            product = None
+            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+        user_class.change_name_category(msg.from_user.id, price, product, tmp_data)
+        bot.send_message(msg.from_user.id, "Отлично")
+    else:
+        bot.send_message(msg.from_user.id, "Произошла ошибка. Попробуй снова")
     print_help(msg)
-    user_class.change_name_category(msg.from_user.id, msg.text, tmp_data[0], tmp_data[1])
 
 @bot.message_handler(commands = ['delete_purchase'])
 def get_name_for_delete_purchase(message):
