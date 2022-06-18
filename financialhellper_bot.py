@@ -111,6 +111,16 @@ def get_statistics_for_period_two(mesg):
     except:
         bot.send_message(id, "неверный ввод")
 
+@bot.message_handler(commands = ['report_for_current_month'])
+def report_for_month(message):
+    id = message.from_user.id
+    print (DATABASE.current_month_money_statistics(id))
+
+@bot.message_handler(commands = ['report_for_current_year'])
+def report_for_month(message):
+    id = message.from_user.id
+    print (DATABASE.year_money_statistics(id))
+
 #позволяет менять название категории (последующие две функции вызываются цепочкой)
 @bot.message_handler(commands = ['change_category_name'])
 def change_category_name(message):
