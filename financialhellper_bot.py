@@ -131,6 +131,12 @@ def get_statistics_for_month(mesg):
         for data in information:
             statictics += "{}: {} р.\n".format(data[0],data[1])
         bot.send_message(mesg.from_user.id, statictics)
+        vals = [data[1] for data in information]
+        labels = [data[0] for data in information]
+        get_circle_diagram(vals, labels)
+        img = open('current_month_diagram.png', 'rb')
+        bot.send_photo(message.from_user.id, img)
+
     except:
         bot.send_message(mesg.from_user.id, "информации нет")
     
@@ -162,9 +168,14 @@ def report_for_current_month(message):
     statictics = ''
     for data in information:
         statictics += "{}: {} р.\n".format(data[0],data[1])
-    print(information)
-
     bot.send_message(message.from_user.id, statictics)
+    vals = [data[1] for data in information]
+    labels = [data[0] for data in information]
+    get_circle_diagram(vals, labels)
+    img = open('current_month_diagram.png', 'rb')
+    bot.send_photo(message.from_user.id, img)
+
+
         
 
 @bot.message_handler(commands = ['report_for_current_year'])
@@ -286,11 +297,12 @@ def deleting_purchase(msg):
 
 def get_circle_diagram(vals, labels):
     fig, ax = plt.subplots()
-    ax.pie(vals, labels = labels)
+    ax.pie(vals, labels=labels)
     ax.axis("equal")
-    plt.show()
-    return
-    
+    plt.savefig("current_month_diagram.png")
+
+
+
 
 DATABASE.timecheck()
 bot.polling(none_stop=True, interval=0)
