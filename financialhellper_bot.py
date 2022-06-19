@@ -75,46 +75,46 @@ def get_category_for_new_purchase(message):
 #добавление новой покупки
 @bot.message_handler(commands = ['new'])
 def get_new_bought(message):
-    bot.send_message(message.from_user.id, "Расскажи о покупке через пробел (цена вводится с точкой)")
     current_user_id = message.from_user.id
-    @bot.message_handler(content_types = "text")
-    def get_bought(msg):
-        user_id = msg.from_user.id
-        try:
-            price = float(re.search(r'(\d|\.)+', msg.text).group(0))
-        except:
-            price = None
-            bot.send_message(current_user_id, "Кажется, ты ошибся в цене. Попробуй снова")
-        try:
-            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
-        except:
-            product = None
-            bot.send_message(current_user_id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+    msg = bot.send_message(message.from_user.id, "Расскажи о покупке через пробел (цена вводится с точкой)")
+    bot.register_next_step_handler(msg, get_bought)
 
-        #Добиваюсь корректного ввода от пользователя
-        if product!=None and price !=None:
-                 bot.send_message(message.from_user.id, 
-                 "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(price),product))
-                 keyboard_new_bought = types.InlineKeyboardMarkup()  # наша клавиатура
-                 key_yes_knb = types.InlineKeyboardButton(text='Да', callback_data='yes')  # кнопка «Да»
-                 keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
-                 key_no_knb = types.InlineKeyboardButton(text='Нет', callback_data='no')
-                 keyboard_new_bought.add(key_no_knb)
-                 question_knb = 'Верно?'
-                 bot.send_message(current_user_id, text=question_knb, reply_markup=keyboard_new_bought)
-                 global new_purchase
-                 new_purchase = (product, price)
-                 @bot.callback_query_handler(func=lambda call: True)
-                 def query_handler(call):
-                     bot.answer_callback_query(callback_query_id=call.id, text='Спасибо за ответ!')
-                     answer = ''
-                     if call.data == 'yes':
-                        data = new_purchase
-                        processing_purchase(current_user_id, data[0], data[1])
-                     elif call.data == 'no':
-                         answer = 'Попробуем снова?'                         
-                         bot.send_message(call.message.chat.id, answer)
-                     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+def get_bought(msg):
+    user_id = msg.from_user.id
+    try:
+        price = float(re.search(r'(\d|\.)+', msg.text).group(0))
+    except:
+        price = None
+        bot.send_message(user_id, "Кажется, ты ошибся в цене. Попробуй снова")
+    try:
+        product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
+    except:
+        product = None
+        bot.send_message(user_id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+    #Добиваюсь корректного ввода от пользователя
+    if product!=None and price !=None:
+            bot.send_message(user_id, 
+            "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(price),product))
+            keyboard_new_bought = types.InlineKeyboardMarkup()  # наша клавиатура
+            key_yes_knb = types.InlineKeyboardButton(text='Да', callback_data='yes')  # кнопка «Да»
+            keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
+            key_no_knb = types.InlineKeyboardButton(text='Нет', callback_data='no')
+            keyboard_new_bought.add(key_no_knb)
+            question_knb = 'Верно?'
+            bot.send_message(user_id, text=question_knb, reply_markup=keyboard_new_bought)
+            global new_purchase
+            new_purchase = (product, price)
+            @bot.callback_query_handler(func=lambda call: True)
+            def query_handler(call):
+                bot.answer_callback_query(callback_query_id=call.id, text='Спасибо за ответ!')
+                answer = ''
+                if call.data == 'yes':
+                    data = new_purchase
+                    processing_purchase(user_id, data[0], data[1])
+                elif call.data == 'no':
+                    answer = 'Попробуем снова?'                         
+                    bot.send_message(user_id, answer)
+                    bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
 
 #позволяет получить статистику за определнный месяц
 @bot.message_handler(commands = ['report_for_month'])
