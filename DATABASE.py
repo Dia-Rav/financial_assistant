@@ -201,7 +201,7 @@ def change_category_name_DATABASE(user_id, old_category, new_category, words):  
         if sqlite_connection:
             sqlite_connection.close()
 
-def change_name_category_DATABASE(user_id, word, old_category, new_category, price = 0): #data = (id, слово, название старой категории, название новой категории, цена)
+def change_name_category_DATABASE(user_id, word, old_category, new_category, price = 0): #data = (id, слово, название старой категории, название новой категории)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
@@ -586,5 +586,4 @@ if __name__ == '__main__':
     #insert_new_category(999911111, 'other', 'glue', 500)
     #insert_new_category(999911111, 'drink', 'milk', 80)
     #insert_new_category(000000000, '???', '???', 666)
-    otchet()
     pass
