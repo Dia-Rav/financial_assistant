@@ -4,6 +4,7 @@ import DATABASE
 import user_class
 from datetime import date
 import re
+import matplotlib
 
 tmp_data = None
 new_purchase = ()
@@ -28,7 +29,8 @@ def processing_purchase(user_id, product, price):
     if user_class.check_user_category(user_id, product, price):
         bot.send_message(user_id, "мы нашли категорию для этого продукта")
         return
-    else: 
+    else:
+        category_offers = []
         category_offers = DATABASE.category_statistics(product)
         if len(category_offers)>1:
             creating_survey_about_category (user_id, category_offers, product, price)
@@ -38,15 +40,15 @@ def processing_purchase(user_id, product, price):
             msg = bot.send_message(user_id, 'назови категорию для продукта')
             bot.register_next_step_handler(msg, get_category_for_new_purchase)
 #клавиатура с предложением категорий
-def creating_survey_about_category (user_id, category_offersm, product, price):
+def creating_survey_about_category (user_id, category_offers, product, price):
     keyboard_categories = types.InlineKeyboardMarkup()  # наша клавиатура
     for cat in category_offers:
         key_knb = types.InlineKeyboardButton(text = cat, callback_data = cat)
-        keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
+        keyboard_categories.add(key_knb)  # добавляем кнопку в клавиатуру
     key_idk = types.InlineKeyboardButton(text = 'другое..', callback_data = 0)
-    keyboard_new_bought.add(key_idk)  # добавляем кнопку в клавиатуру
+    keyboard_categories.add(key_idk)  # добавляем кнопку в клавиатуру
     question_knb = 'выбери категорию'
-    bot.send_message(user_id, text=question_knb, reply_markup=keyboard_new_bought)
+    bot.send_message(user_id, text=question_knb, reply_markup=keyboard_categories)
     @bot.callback_query_handler(func=lambda call: True)
     def query_handler(call):
         bot.answer_callback_query(user_id, text='Спасибо за ответ!')
@@ -167,11 +169,15 @@ def report_for_current_month(message):
 def report_for_current_year(message):
     DATABASE.timecheck()
     id = message.from_user.id
-    information = DATABASE.year_money_statistics(id)
-    statictics = ''
-    for key, value in information.items():
-        statictics += "{}: {} р.\n".format(key, value)
-    bot.send_message(message.from_user.id, statictics)
+    try:
+        information = DATABASE.year_money_statistics(id)
+        statictics = ''
+        for key, value in information.items():
+            statictics += "{}: {} р.\n".format(key, value)
+        bot.send_message(message.from_user.id, statictics)
+    except:
+        bot.send_message(message.from_user.id, "Нет информации")
+
 
 #позволяет менять название категории (последующие две функции вызываются цепочкой)
 @bot.message_handler(commands = ['change_category_name'])
