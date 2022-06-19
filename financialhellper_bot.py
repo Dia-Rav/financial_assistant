@@ -37,7 +37,7 @@ def processing_purchase(user_id, product, price):
             new_purchase = (product, price) 
             msg = bot.send_message(user_id, 'назови категорию для продукта')
             bot.register_next_step_handler(msg, get_category_for_new_purchase)
-
+#клавиатура с предложением категорий
 def creating_survey_about_category (user_id, category_offersm, product, price):
     keyboard_categories = types.InlineKeyboardMarkup()  # наша клавиатура
     for cat in category_offers:
@@ -63,7 +63,7 @@ def creating_survey_about_category (user_id, category_offersm, product, price):
             msg = bot.send_message(user_id, 'назови свой вариант')
             bot.register_next_step_handler(msg, get_category_for_new_purchase)
 
-#вызывается в случае отсутствия категории для продукта
+#вызывается в случае отсутствия категории для продукта или если пользователь хочет свою
 def get_category_for_new_purchase(message):
     global new_purchase
     bot.send_message(message.from_user.id, 'Здорово! Что-то еще?')
