@@ -341,7 +341,7 @@ def otchet():
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
 
-        table = 'База данных по статистике\n \nслово\t\tкатегория\tчастота \n'
+        table = 'База данных по популярности категорий\n \nслово\t\tкатегория\tчастота \n'
 
         sql_select_query = """SELECT * FROM FREQUENCY"""
         cursor.execute(sql_select_query)
@@ -351,14 +351,14 @@ def otchet():
             tmp = str(row[0]) + '\t\t' + str(row[1]) + '\t\t' + str(row[2]) + '\n'
             table += tmp
 
-        table += '\nБаза данных по денежным тратам\n \nid\t\tкатегория\tпотраченные деньги \n'
+        table += '\nБаза данных по денежным тратам\n \nid\t\tкатегория\tпотраченные деньги\t\tпоследний месяц изменения \n'
 
         sql_select_query = """SELECT * FROM MONEY"""
         cursor.execute(sql_select_query)
         records = cursor.fetchall()
 
         for row in records:
-            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\t\t' + str(row[3]) + '\n'
+            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\t\t\t\t' + str(row[3]) + '\n'
             table += tmp
 
         table += '\nБаза данных по статистике\n \nid\t\tслово\t\tкатегория \n'
@@ -369,6 +369,16 @@ def otchet():
 
         for row in records:
             tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\n'
+            table += tmp
+
+        table += '\nБаза данных по статистике\n \nid\t\tкатегория\tпотраченные деньги\t\tмесяц  \n'
+
+        sql_select_query = """SELECT * FROM STATISTICS"""
+        cursor.execute(sql_select_query)
+        records = cursor.fetchall()
+
+        for row in records:
+            tmp = str(row[0]) + '\t' + str(row[1]) + '\t\t' + str(row[2]) + '\t\t\t\t' + str(row[3]) + '\n'
             table += tmp
 
         print(table)
@@ -567,7 +577,6 @@ def year_money_statistics(user_id, start = 1, finish = 12):
 
 if __name__ == '__main__':
     #print(year_money_statistics(999900000))
-    pass
     #timecheck()
     #delete_purchase(999900000, 'bread', 100)
     #insert_new_category(999900000, 'food', 'bread', 100)
@@ -576,3 +585,6 @@ if __name__ == '__main__':
     #insert_new_category(999911111, 'food', 'bread', 90)
     #insert_new_category(999911111, 'other', 'glue', 500)
     #insert_new_category(999911111, 'drink', 'milk', 80)
+    #insert_new_category(000000000, '???', '???', 666)
+    otchet()
+    pass
