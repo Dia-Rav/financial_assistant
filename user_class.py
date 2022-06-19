@@ -79,7 +79,7 @@ def add_to_category(user_id, category, product, price):
         for prod in products:
             current_user.categories[category].append(prod)
         current_user.categories[category] = current_user.categories[category]
-        DATABASE.add_product_at_category(user_id, category, product, price)
+        DATABASE.add_product_to_category(user_id, category, product, price)
         DATABASE.otchet()
         pass 
     else:
