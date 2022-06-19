@@ -76,19 +76,20 @@ def get_category_for_new_purchase(message):
 @bot.message_handler(commands = ['new'])
 def get_new_bought(message):
     bot.send_message(message.from_user.id, "Расскажи о покупке через пробел (цена вводится с точкой)")
+    current_user_id = message.from_user.id
     @bot.message_handler(content_types = "text")
     def get_bought(msg):
-        user_id = message.from_user.id
+        user_id = msg.from_user.id
         try:
             price = float(re.search(r'(\d|\.)+', msg.text).group(0))
         except:
             price = None
-            bot.send_message(msg.from_user.id, "Кажется, ты ошибся в цене. Попробуй снова")
+            bot.send_message(current_user_id, "Кажется, ты ошибся в цене. Попробуй снова")
         try:
             product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
         except:
             product = None
-            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+            bot.send_message(current_user_id, "Кажется, что-то не так с названием покупки. Попробуй снова")
 
         #Добиваюсь корректного ввода от пользователя
         if product!=None and price !=None:
@@ -100,7 +101,7 @@ def get_new_bought(message):
                  key_no_knb = types.InlineKeyboardButton(text='Нет', callback_data='no')
                  keyboard_new_bought.add(key_no_knb)
                  question_knb = 'Верно?'
-                 bot.send_message(message.from_user.id, text=question_knb, reply_markup=keyboard_new_bought)
+                 bot.send_message(current_user_id, text=question_knb, reply_markup=keyboard_new_bought)
                  global new_purchase
                  new_purchase = (product, price)
                  @bot.callback_query_handler(func=lambda call: True)
@@ -109,7 +110,7 @@ def get_new_bought(message):
                      answer = ''
                      if call.data == 'yes':
                         data = new_purchase
-                        processing_purchase(message.from_user.id, data[0], data[1])
+                        processing_purchase(current_user_id, data[0], data[1])
                      elif call.data == 'no':
                          answer = 'Попробуем снова?'                         
                          bot.send_message(call.message.chat.id, answer)
