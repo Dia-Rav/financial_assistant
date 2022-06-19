@@ -4,7 +4,7 @@ import DATABASE
 import user_class
 from datetime import date
 import re
-import matplotlib
+import matplotlib.pyplot as plt
 
 tmp_data = None
 new_purchase = ()
@@ -162,6 +162,8 @@ def report_for_current_month(message):
     statictics = ''
     for data in information:
         statictics += "{}: {} р.\n".format(data[0],data[1])
+    print(information)
+
     bot.send_message(message.from_user.id, statictics)
         
 
@@ -281,6 +283,13 @@ def deleting_purchase(msg):
         bot.send_message(msg.from_user.id, "Отлично")
     else:
         bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
+
+def get_circle_diagram(vals, labels):
+    fig, ax = plt.subplots()
+    ax.pie(vals, labels = labels)
+    ax.axis("equal")
+    plt.show()
+    return
     
 
 DATABASE.timecheck()
