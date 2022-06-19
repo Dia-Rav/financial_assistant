@@ -133,6 +133,11 @@ def get_statistics_for_month(mesg):
         bot.send_message(mesg.from_user.id, statictics)
         vals = [data[1] for data in information]
         labels = [data[0] for data in information]
+        # Следцющий for почему-то не работает
+        #Нужен для того, чтобы на нулевых позициях в диаграме слова друг на друга не наползали
+        for l in range(len(labels)):
+            if vals[l] == 0:
+                labels[l] == ' '
         get_circle_diagram(vals, labels)
         img = open('current_month_diagram.png', 'rb')
         bot.send_photo(message.from_user.id, img)
@@ -171,6 +176,10 @@ def report_for_current_month(message):
     bot.send_message(message.from_user.id, statictics)
     vals = [data[1] for data in information]
     labels = [data[0] for data in information]
+    #Следцющий for почему-то не работает
+    for l in range(len(labels)):
+        if vals[l] == 0:
+            labels[l] == ' '
     get_circle_diagram(vals, labels)
     img = open('current_month_diagram.png', 'rb')
     bot.send_photo(message.from_user.id, img)
