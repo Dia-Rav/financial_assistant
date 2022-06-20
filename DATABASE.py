@@ -306,23 +306,24 @@ def timecheck():
             MONEY_select_query = """SELECT * FROM MONEY"""
             cursor.execute(MONEY_select_query)
             records = cursor.fetchall()
-            for row in records:
-                check_existance = """select id from STATISTICS where id = ? and category = ? and month = ?"""
-                cursor.execute(check_existance, (row[0], row[1], row[3], ))
-                record = cursor.fetchall()
-                if record == []:
-                    sqlite_insert_STATISTICS = """INSERT INTO STATISTICS
-                                        (id, category, money_spent, month)
-                                        VALUES (?, ?, ?, ?);"""
-                    data = (row[0], row[1], row[2], row[3])
+            for id, category, money, month in records:
+                if money > 0:
+                    check_existance = """select id from STATISTICS where id = ? and category = ? and month = ?"""
+                    cursor.execute(check_existance, (id, category, month, ))
+                    record = cursor.fetchall()
+                    if record == []:
+                        sqlite_insert_STATISTICS = """INSERT INTO STATISTICS
+                                            (id, category, money_spent, month)
+                                            VALUES (?, ?, ?, ?);"""
+                        data = (id, category, money, month)
 
-                    cursor.execute(sqlite_insert_STATISTICS, data)
-                    sqlite_connection.commit()
-                else:
-                    sqlite_update_STATISTICS = """Update STATISTICS set money_spent = ? where id = ? and category = ? and month = ?"""
-                    data = (row[2], row[0], row[1], row[3])
-                    cursor.execute(sqlite_update_STATISTICS, data)
-                    sqlite_connection.commit()
+                        cursor.execute(sqlite_insert_STATISTICS, data)
+                        sqlite_connection.commit()
+                    else:
+                        sqlite_update_STATISTICS = """Update STATISTICS set money_spent = ? where id = ? and category = ? and month = ?"""
+                        data = (money, id, category, month)
+                        cursor.execute(sqlite_update_STATISTICS, data)
+                        sqlite_connection.commit()
 
             sqlite_update_MONEY = """Update MONEY set money_spent = ?, last_change_month = ?"""
             cursor.execute(sqlite_update_MONEY, (0, month_today(cursor, sqlite_connection, )))
@@ -504,7 +505,13 @@ def current_month_money_statistics(user_id):
         cursor.execute(MONEY_select_query, (user_id,))
         record = cursor.fetchall()
         cursor.close()
-        return(record)
+        output = []
+        for category, money in record:
+            if money > 0:
+                output.append((category, money))
+        if output == []:
+            output = 0
+        return(output)
     except sqlite3.Error as error:
         print("Ошибка в блоке current_statistics: ", error)
     finally:
@@ -576,7 +583,8 @@ def year_money_statistics(user_id, start = 1, finish = 12):
             sqlite_connection.close()
 
 if __name__ == '__main__':
-    #print(year_money_statistics(999900000))
+    #timecheck()
+    #print(month_money_statistics(999900000, 6))
     #timecheck()
     #delete_purchase(999900000, 'bread', 100)
     #insert_new_category(999900000, 'food', 'bread', 100)
