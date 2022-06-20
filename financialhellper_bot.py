@@ -13,6 +13,18 @@ with open("token_bot.txt", "r") as file:
     token_bot = file.read()
 bot = telebot.TeleBot(token_bot)
 
+@bot.message_handler(commands=['start'])
+def print_help(message):
+        bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
+/change_category_name - сменить название категории\n \
+/change_category_of_product - сменить категорию для продукта\n \
+/delete_purchase - удаление покупки\n \
+/report_for_month - отчет по тратам за любой месяц последнего года\n \
+/report_for_period - отчет по тратам за несколько месяцев последнего года\n \
+/report_for_current_month - отчет по тратам за текущий месяц\n \
+/report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
+")
+
 @bot.message_handler(commands=['help'])
 def print_help(message):
         bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
@@ -24,6 +36,7 @@ def print_help(message):
 /report_for_current_month - отчет по тратам за текущий месяц\n \
 /report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
 ")
+
 #обработка продукта, находит категорию или спрашивает пользователя
 def processing_purchase(user_id, product, price):
     if user_class.check_user_category(user_id, product, price):
@@ -81,6 +94,7 @@ def get_new_bought(message):
 
 def get_bought(msg):
     user_id = msg.from_user.id
+    msg.text = msg.text.lower()
     try:
         price = float(re.search(r'(\d|\.)+', msg.text).group(0))
     except:
@@ -119,6 +133,8 @@ def get_bought(msg):
                     bot.send_message(tmp_data, answer)
                     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
 
+
+
 #позволяет получить статистику за определнный месяц
 @bot.message_handler(commands = ['report_for_month'])
 def report_for_month(message):
@@ -129,16 +145,21 @@ def get_statistics_for_month(mesg):
     try:
         information = DATABASE.month_money_statistics(mesg.from_user.id, int(mesg.text))
         statictics = ''
+        vals = []
+        labels = []
         for data in information:
-            statictics += "{}: {} р.\n".format(data[0],data[1])
+            if data[1] != 0:
+                statictics += "{}: {} р.\n".format(data[0],data[1])
+                vals.append (data[1])
+                labels.append(data[0])
+        if statictics == '':
+            raise ValueError('нет инфы')
         bot.send_message(mesg.from_user.id, statictics)
-        vals = [data[1] for data in information]
-        labels = [data[0] for data in information]
         get_circle_diagram(vals, labels)
-        img = open('current_month_diagram.png', 'rb')
+        img = open('diagram.png', 'rb')
         bot.send_photo(mesg.from_user.id, img)
-
-    except:
+    except Exception as error:
+        print (repr(error))
         bot.send_message(mesg.from_user.id, "информации нет")
     
 bot.message_handler(commands = ['report_for_period'])
@@ -158,8 +179,10 @@ def get_statistics_for_period_two(mesg):
     global tmp_data
     try:
         print (DATABASE.year_money_statistics(mesg.from_user.id, int(tmp_data), int(mesg.text)))
-    except:
+    except Exception as error:
+        print (repr(error))
         bot.send_message(id, "неверный ввод")
+
 
 @bot.message_handler(commands = ['report_for_current_month'])
 def report_for_current_month(message):
@@ -178,14 +201,11 @@ def report_for_current_month(message):
             if vals[l] == 0:
                 labels[l] == ' '
         get_circle_diagram(vals, labels)
-        img = open('current_month_diagram.png', 'rb')
+        img = open('diagram.png', 'rb')
         bot.send_photo(message.from_user.id, img)
     else:
         bot.send_message(message.from_user.id, "Нет информации")
-
-
-
-        
+ 
 
 @bot.message_handler(commands = ['report_for_current_year'])
 def report_for_current_year(message):
@@ -194,10 +214,19 @@ def report_for_current_year(message):
     try:
         information = DATABASE.year_money_statistics(id)
         statictics = ''
+        vals = []
+        labels = []
         for key, value in information.items():
-            statictics += "{}: {} р.\n".format(key, value)
+            if value != 0:
+                statictics += "{}: {} р.\n".format(key, value)
+                vals.append (value)
+                labels.append(key)
         bot.send_message(message.from_user.id, statictics)
-    except:
+        get_circle_diagram(vals, labels)
+        img = open('diagram.png', 'rb')
+        bot.send_photo(message.from_user.id, img)
+    except Exception as error:
+        print (repr(error))
         bot.send_message(message.from_user.id, "Нет информации")
 
 
@@ -303,15 +332,21 @@ def deleting_purchase(msg):
     else:
         bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
 
+colors = ['#c8a2c8', '#ad75ad', '#e6a8d7', '#735184', '#7366bd', '#ea8df7', '#e0b0ff', '#424874', '#dcd6f7', '#d8bfd8', '#ffc0cb', '#b1ddc1 ']
 def get_circle_diagram(vals, labels):
     fig, ax = plt.subplots()
-    ax.pie(vals, labels=labels)
+    length = len(vals)
+    x = [0.01 for i in range (length)]
+    explode = tuple (x)
+    global colors
+    ax.pie(vals, labels=labels, explode=explode, colors = colors, autopct='%1.1f%%')
     ax.axis("equal")
-    plt.savefig("current_month_diagram.png")
-
-
+    plt.savefig("diagram.png")
 
 
 
 DATABASE.timecheck()
+
 bot.polling(none_stop=True, interval=0)
+
+
