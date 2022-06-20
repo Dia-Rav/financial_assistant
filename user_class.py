@@ -27,7 +27,6 @@ def check_user_category(user_id, product, price):
     for key, products in categories.items():
         if product in products:
             DATABASE.payment(user_id, key, price)
-            DATABASE.otchet()
             return True
     return False
 
@@ -70,7 +69,8 @@ def new_category(user_id, category, product, price):#(user_id, категори�
     DATABASE.insert_new_category(user_id, category, product, price)
     DATABASE.otchet()
     return
-
+#если объявленная категория для нового товара есть, то добавляется товар в статистику
+#если тако категории нет, то создается
 def add_to_category(user_id, category, product, price):
     current_user = users_in_contact.get(user_id, user(user_id))
     if category in current_user.categories:
