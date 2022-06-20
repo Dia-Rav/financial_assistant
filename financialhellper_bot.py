@@ -225,7 +225,6 @@ def get_category_for_rename(msg):
         print_help(msg)
 #позволяет менять категорию для продукта
 @bot.message_handler(commands = ['change_category_of_product'])
-
 def get_old_name_category(msg):
     user_id = msg.from_user.id
     new = bot.send_message(msg.from_user.id, "на какую категорию надо поменять?")

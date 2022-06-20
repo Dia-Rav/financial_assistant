@@ -44,9 +44,9 @@ def change_category_name(user_id, old_category, new_category_text):
 
 def change_name_category(user_id, price, product, new_category_text):
     current_user = users_in_contact.get(user_id, user(user_id))
-    for old_cat, products in categories.items():
+    for old_cat, products in current_user.categories.items():
         if product in products:
-            old_category = old.cat
+            old_category = old_cat
             if new_category_text in current_user.categories:
                 other_products = current_user.categories[new_category_text]
                 current_user.categories[new_category_text] = []
