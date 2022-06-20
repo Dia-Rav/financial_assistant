@@ -106,16 +106,18 @@ def get_bought(msg):
             bot.send_message(user_id, text=question_knb, reply_markup=keyboard_new_bought)
             global new_purchase
             new_purchase = (product, price)
+            global tmp_data
+            tmp_data = user_id
             @bot.callback_query_handler(func=lambda call: True)
             def query_handler(call):
                 bot.answer_callback_query(callback_query_id=call.id, text='Спасибо за ответ!')
-                answer = ''
+                global tmp_data
                 if call.data == 'yes':
                     data = new_purchase
-                    processing_purchase(user_id, data[0], data[1])
+                    processing_purchase(tmp_data, data[0], data[1])
                 elif call.data == 'no':
                     answer = 'Попробуем снова?'                         
-                    bot.send_message(user_id, answer)
+                    bot.send_message(tmp_data, answer)
                     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
 
 #позволяет получить статистику за определнный месяц
