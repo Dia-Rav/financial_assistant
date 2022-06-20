@@ -171,18 +171,22 @@ def report_for_current_month(message):
     id = message.from_user.id
     information = DATABASE.current_month_money_statistics(id)
     statictics = ''
-    for data in information:
-        statictics += "{}: {} р.\n".format(data[0],data[1])
-    bot.send_message(message.from_user.id, statictics)
-    vals = [data[1] for data in information]
-    labels = [data[0] for data in information]
-    #Следцющий for почему-то не работает
-    for l in range(len(labels)):
-        if vals[l] == 0:
-            labels[l] == ' '
-    get_circle_diagram(vals, labels)
-    img = open('current_month_diagram.png', 'rb')
-    bot.send_photo(message.from_user.id, img)
+    if information != 0:
+        for data in information:
+            statictics += "{}: {} р.\n".format(data[0],data[1])
+        bot.send_message(message.from_user.id, statictics)
+        vals = [data[1] for data in information]
+        labels = [data[0] for data in information]
+        #Следцющий for почему-то не работает
+        for l in range(len(labels)):
+            if vals[l] == 0:
+                labels[l] == ' '
+        get_circle_diagram(vals, labels)
+        img = open('current_month_diagram.png', 'rb')
+        bot.send_photo(message.from_user.id, img)
+    else:
+        bot.send_message(message.from_user.id, "Нет информации")
+
 
 
         
@@ -309,6 +313,8 @@ def get_circle_diagram(vals, labels):
     ax.pie(vals, labels=labels)
     ax.axis("equal")
     plt.savefig("current_month_diagram.png")
+
+
 
 
 
