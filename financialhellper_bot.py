@@ -141,7 +141,6 @@ def get_statistics_for_month(mesg):
         get_circle_diagram(vals, labels)
         img = open('current_month_diagram.png', 'rb')
         bot.send_photo(message.from_user.id, img)
-
     except:
         bot.send_message(mesg.from_user.id, "информации нет")
     
