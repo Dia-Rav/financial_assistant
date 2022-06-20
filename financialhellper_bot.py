@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 tmp_data = None
 new_purchase = ()
+names_of_month = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
 
 with open("token_bot.txt", "r") as file:
     token_bot = file.read()
@@ -162,26 +163,36 @@ def get_statistics_for_month(mesg):
         print (repr(error))
         bot.send_message(mesg.from_user.id, "информации нет")
     
-bot.message_handler(commands = ['report_for_period'])
+@bot.message_handler(commands = ['report_for_period'])
 def report_for_period(message):
-    DATABASE.timecheck()
     id = message.from_user.id
     mesg = bot.send_message(id, "Напиши номер месяца, начиная с которого ты хочешь узнать статистику (статистика доступна за последний год)")
     bot.register_next_step_handler(mesg, get_statistics_for_period_one)
 
 def get_statistics_for_period_one(mesg):
     global tmp_data
-    tmp_data = mesg.text
-    mesg = bot.send_message(id, "Напиши номер месяца - конец периода")
+    tmp_data = int(mesg.text)
+    mesg = bot.send_message(mesg.from_user.id, "Напиши номер месяца - конец периода (не включительно)")
     bot.register_next_step_handler(mesg, get_statistics_for_period_two)
 
 def get_statistics_for_period_two(mesg):
     global tmp_data
+    statictics = ''
     try:
-        print (DATABASE.year_money_statistics(mesg.from_user.id, int(tmp_data), int(mesg.text)))
+        for i in range (tmp_data, int(mesg.text)+1):
+            information = DATABASE.month_money_statistics(mesg.from_user.id, i)
+            if information != 0:
+                statictics += '{}: \n'.format (names_of_month[i-1])
+                for data in information:
+                    if data[1] != 0:
+                        statictics += "  {}: {} р.\n".format(data[0],data[1])
+        if statictics == '':
+            bot.send_message(mesg.from_user.id, "нет информации за период")
+        else:
+            bot.send_message(mesg.from_user.id, statictics)
     except Exception as error:
         print (repr(error))
-        bot.send_message(id, "неверный ввод")
+        bot.send_message(mesg.from_user.id, "неверный ввод")
 
 
 @bot.message_handler(commands = ['report_for_current_month'])
