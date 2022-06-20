@@ -32,7 +32,7 @@ def processing_purchase(user_id, product, price):
     else:
         category_offers = []
         category_offers = DATABASE.category_statistics(product)
-        if len(category_offers)>1:
+        if len(category_offers)>0:
             creating_survey_about_category (user_id, category_offers, product, price)
         else:
             global new_purchase
@@ -41,21 +41,19 @@ def processing_purchase(user_id, product, price):
             bot.register_next_step_handler(msg, get_category_for_new_purchase)
 #клавиатура с предложением категорий
 def creating_survey_about_category (user_id, category_offers, product, price):
-    keyboard_categories = types.InlineKeyboardMarkup()  # наша клавиатура
+    keyboard_categories = types.InlineKeyboardMarkup() # наша клавиатура
     for cat in category_offers:
         key_knb = types.InlineKeyboardButton(text = cat, callback_data = cat)
         keyboard_categories.add(key_knb)  # добавляем кнопку в клавиатуру
-    key_idk = types.InlineKeyboardButton(text = 'другое..', callback_data = 0)
-    keyboard_categories.add(key_idk)  # добавляем кнопку в клавиатуру
-    question_knb = 'выбери категорию'
-    bot.send_message(user_id, text=question_knb, reply_markup=keyboard_categories)
-    @bot.callback_query_handler(func=lambda call: True)
-    def query_handler(call):
-        bot.answer_callback_query(user_id, text='Спасибо за ответ!')
-        answer = ''
-        if call.data != 0:
-            print (call.data)
-        #(user_id, category, product, price)
+    key_idk = types.InlineKeyboardButton(text = 'другое..', callback_data = '0')
+    keyboard_categories.add(key_idk) 
+    bot.send_message(user_id, 'выбери категорию', reply_markup = keyboard_categories)
+    category_offers.append ('0')
+    @bot.callback_query_handler(func=lambda call: call.data in category_offers)
+    def cat_handler(call):
+        bot.answer_callback_query(callback_query_id=call.id, text='Круто!')
+        if call.data != '0':
+            #(user_id, category, product, price)
             user_class.add_to_category(user_id, call.data, product, price)
             bot.edit_message_reply_markup(user_id, call.message.message_id)
         else:  
@@ -108,7 +106,7 @@ def get_bought(msg):
             new_purchase = (product, price)
             global tmp_data
             tmp_data = user_id
-            @bot.callback_query_handler(func=lambda call: True)
+            @bot.callback_query_handler(func=lambda call: call.data == 'no' or call.data == 'yes')
             def query_handler(call):
                 bot.answer_callback_query(callback_query_id=call.id, text='Спасибо за ответ!')
                 global tmp_data
@@ -309,9 +307,6 @@ def get_circle_diagram(vals, labels):
     ax.pie(vals, labels=labels)
     ax.axis("equal")
     plt.savefig("current_month_diagram.png")
-
-
-
 
 
 
