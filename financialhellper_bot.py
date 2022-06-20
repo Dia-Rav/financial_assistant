@@ -113,6 +113,7 @@ def get_bought(msg):
                 if call.data == 'yes':
                     data = new_purchase
                     processing_purchase(tmp_data, data[0], data[1])
+                    bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
                 elif call.data == 'no':
                     answer = 'Попробуем снова?'                         
                     bot.send_message(tmp_data, answer)
