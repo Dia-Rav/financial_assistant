@@ -161,7 +161,7 @@ def get_statistics_for_month(mesg):
         bot.send_photo(mesg.from_user.id, img)
     except Exception as error:
         print (repr(error))
-        bot.send_message(mesg.from_user.id, "информации нет")
+        bot.send_message(mesg.from_user.id, "информации нет, если нужна была статистика за текующий месяц, воспользуйся  /report_for_current_month ")
     
 @bot.message_handler(commands = ['report_for_period'])
 def report_for_period(message):
@@ -172,7 +172,7 @@ def report_for_period(message):
 def get_statistics_for_period_one(mesg):
     global tmp_data
     tmp_data = int(mesg.text)
-    mesg = bot.send_message(mesg.from_user.id, "Напиши номер месяца - конец периода (не включительно)")
+    mesg = bot.send_message(mesg.from_user.id, "Напиши номер месяца - конец периода")
     bot.register_next_step_handler(mesg, get_statistics_for_period_two)
 
 def get_statistics_for_period_two(mesg):
