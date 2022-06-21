@@ -186,6 +186,12 @@ def get_statistics_for_period_two(mesg):
                 for data in information:
                     if data[1] != 0:
                         statictics += "  {}: {} р.\n".format(data[0],data[1])
+        info_current_month = DATABASE.current_month_money_statistics(mesg.from_user.id)
+        if info_current_month != 0:#узнать что возвращает функция при отсутвии инфы
+            today = date.today()
+            statictics += '{}: \n'.format (names_of_month[today.month -1])
+            for data in info_current_month:
+                statictics += "  {}: {} р.\n".format(data[0],data[1])
         if statictics == '':
             bot.send_message(mesg.from_user.id, "нет информации за период")
         else:
@@ -353,7 +359,6 @@ def get_circle_diagram(vals, labels):
     ax.pie(vals, labels=labels, explode=explode, colors = colors, autopct='%1.1f%%')
     ax.axis("equal")
     plt.savefig("diagram.png")
-
 
 
 DATABASE.timecheck()
