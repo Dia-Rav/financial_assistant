@@ -229,7 +229,7 @@ def report_for_current_year(message):
     DATABASE.timecheck()
     id = message.from_user.id
     try:
-        information = DATABASE.year_money_statistics(id)
+        information = DATABASE.year_money_statistics(id, 0, 12)
         statictics = ''
         vals = []
         labels = []
@@ -349,7 +349,7 @@ def deleting_purchase(msg):
     else:
         bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
 
-colors = ['#c8a2c8', '#ad75ad', '#e6a8d7', '#735184', '#7366bd', '#ea8df7', '#e0b0ff', '#424874', '#dcd6f7', '#d8bfd8', '#ffc0cb', '#b1ddc1 ']
+colors = ['#e0b0ff', '#cda4de','#ad75ad', '#735184', '#8b5a96', '#dcd6f7', '#bd91c7', '#ffc0cb', '#eebef1', '#baacc7', '#dda0dd' ]
 def get_circle_diagram(vals, labels):
     fig, ax = plt.subplots()
     length = len(vals)
