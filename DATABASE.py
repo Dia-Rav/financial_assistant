@@ -562,11 +562,16 @@ def year_money_statistics(user_id, start = 1, finish = 12):
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
         output = dict()
-
         for month in range(start, finish):
-            STATISTICS_select_query = """select category, money_spent from STATISTICS where id = ? AND month = ?"""
-            cursor.execute(STATISTICS_select_query, (user_id, month,))
-            record = cursor.fetchall()
+            if month != 0:
+                STATISTICS_select_query = """select category, money_spent from STATISTICS where id = ? AND month = ?"""
+                cursor.execute(STATISTICS_select_query, (user_id, month,))
+                record = cursor.fetchall()
+            else:
+                MONEY_select_query = """select category, money_spent from MONEY where id = ?"""
+                cursor.execute(MONEY_select_query, (user_id,))
+                record = cursor.fetchall()
+
             for word, money in record:
                 if word in output:
                     output[word] += money
@@ -584,8 +589,8 @@ def year_money_statistics(user_id, start = 1, finish = 12):
 
 if __name__ == '__main__':
     #timecheck()
+    #payment(454610810, 'одежда', 80)
     #print(month_money_statistics(999900000, 6))
-    #timecheck()
     #delete_purchase(999900000, 'bread', 100)
     #insert_new_category(999900000, 'food', 'bread', 100)
     #insert_new_category(999900000, 'food', 'apple', 50)
@@ -594,4 +599,5 @@ if __name__ == '__main__':
     #insert_new_category(999911111, 'other', 'glue', 500)
     #insert_new_category(999911111, 'drink', 'milk', 80)
     #insert_new_category(000000000, '???', '???', 666)
+    #print(year_money_statistics(454610810, 0))
     pass
