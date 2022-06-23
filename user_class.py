@@ -38,11 +38,13 @@ def change_category_name(user_id, old_category, new_category_text):
         DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]))
         if new_category_text not in current_user.categories:
             current_user.categories[new_category_text] = current_user.categories[old_category]
-            del current_user.categories[old_category]
+            DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]), flag = 0)
         else:
             list_1 = list(current_user.categories[old_category])
             list_2 = list(current_user.categories[new_category_text])
             current_user.categories[new_category_text] = list(itertools.chain(list_1, list_2))
+            DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]), flag = 1)
+        del current_user.categories[old_category]
         return True
     else:
         return False
