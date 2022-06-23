@@ -35,11 +35,11 @@ def change_category_name(user_id, old_category, new_category_text):
     #data = (id, название старой категории, название новой категории)
     current_user = users_in_contact.get(user_id, user(user_id))
     if old_category in current_user.categories:
-        DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]))
         if new_category_text not in current_user.categories:
             current_user.categories[new_category_text] = current_user.categories[old_category]
             DATABASE.change_category_name_DATABASE(user_id, old_category, new_category_text, list(current_user.categories[old_category]), flag = 0)
         else:
+            print (1)
             list_1 = list(current_user.categories[old_category])
             list_2 = list(current_user.categories[new_category_text])
             current_user.categories[new_category_text] = list(itertools.chain(list_1, list_2))
