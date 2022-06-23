@@ -168,14 +168,25 @@ def add_product_to_category(user_id, category, product, price):   #data = (user_
             sqlite_connection.close()
         payment(user_id, category, price)
 
-def change_category_name_DATABASE(user_id, old_category, new_category, words):  #data1 = (id, название старой категории, название новой, список слов сменяемой категории)
+def change_category_name_DATABASE(user_id, old_category, new_category, words, flag = 0):  #data1 = (id, название старой категории, название новой, список слов сменяемой категории)
     try:
         sqlite_connection = sqlite3.connect('DATABASE.db')
         cursor = sqlite_connection.cursor()
+        if flag == 0:
+            MONEY_update_query = """Update MONEY set category = ? where id = ? AND category = ?"""
+            cursor.execute(MONEY_update_query, (new_category, user_id, old_category))
+            sqlite_connection.commit()
+        else:
+            MONEY_select_query = """Select money_spent from MONEY where id = ? AND category = ?"""
+            cursor.execute(MONEY_select_query, (user_id, old_category))
+            record = cursor.fetchall()
+            money = record[0][0]
 
-        MONEY_update_query = """Update MONEY set category = ? where id = ? AND category = ?"""
-        cursor.execute(MONEY_update_query, (new_category, user_id, old_category))
-        sqlite_connection.commit()
+            sql_delete_query = """DELETE from MONEY where id = ? AND category = ?"""
+            cursor.execute(sql_delete_query, (user_id, old_category))
+            sqlite_connection.commit()
+
+            payment(user_id, new_category, money, 0, cursor, sqlite_connection)
 
         WORDS_CATEGORIES_update_query = """Update WORDS_CATEGORIES set category = ? where id = ? AND category = ?"""
         cursor.execute(WORDS_CATEGORIES_update_query, (new_category, user_id, old_category))
