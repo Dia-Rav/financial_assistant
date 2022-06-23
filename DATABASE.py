@@ -209,7 +209,9 @@ def change_name_category_DATABASE(user_id, word, old_category, new_category, pri
         WORDS_CATEGORIES_update_query = """Update WORDS_CATEGORIES set category = ? where id = ? AND word = ?"""
         cursor.execute(WORDS_CATEGORIES_update_query, (new_category, user_id, word))
         sqlite_connection.commit()
-        
+
+
+        MONEY_update(user_id, old_category, -price, cursor, sqlite_connection)
         MONEY_update(user_id, new_category, price, cursor, sqlite_connection)
 
         words_to_update = [(old_category, word)]
