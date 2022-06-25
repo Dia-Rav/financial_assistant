@@ -5,6 +5,7 @@ import user_class
 from datetime import date
 import re
 import matplotlib.pyplot as plt
+import random
 
 tmp_data = None
 new_purchase = ()
@@ -16,15 +17,27 @@ bot = telebot.TeleBot(token_bot)
 
 @bot.message_handler(commands=['start'])
 def print_help(message):
-        bot.send_message(message.from_user.id, "/new - расскажи о своей покупке \n \
-/change_category_name - сменить название категории\n \
-/change_category_of_product - сменить категорию для продукта\n \
-/delete_purchase - удаление покупки\n \
-/report_for_month - отчет по тратам за любой месяц последнего года\n \
-/report_for_period - отчет по тратам за несколько месяцев последнего года\n \
+    msg = bot.send_message(message.from_user.id, "Привет! Я бот - финансовый помощник. \n \
+Чтобы добавить новую покупку вызови /new и расскажи о ней примерно так: \'товар цена\'. \n \
+Каждому товару присваивается категория, ты сможешь выбрать из предложенных или добавить свою. Это упростит твое взаимодействие с ботом. \
+В будущем ты всегда сможешь её поменять, вызвав /change_category_name - сменить название категории или \
+/change_category_of_product - сменить категорию для продукта.\n \
+/delete_purchase - удаление покупки.\n \
+для получения информации о тратах ты сможешь обратиться к одной из следющих команд: \n \
+/report_for_month - отчет по тратам за любой месяц года\n \
+/report_for_period - отчет по тратам за несколько месяцев\n \
 /report_for_current_month - отчет по тратам за текущий месяц\n \
 /report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
-")
+Также можно вызвать функцию /limit для проверки сколько тебе осталось до ограничения или /new_limit, чтобы установить новый. \n \
+Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев)")
+    bot.register_next_step_handler(msg, get_number_for_history)
+
+def get_number_for_history(msg):
+    try:
+        msg = bot.send_message(msg.from_user.id, 'Спасибо! Приятного общения с ботом.')
+    except Exception as error:
+        print (repr(error))
+
 
 @bot.message_handler(commands=['help'])
 def print_help(message):
@@ -40,7 +53,7 @@ def print_help(message):
 
 #обработка продукта, находит категорию или спрашивает пользователя
 def processing_purchase(user_id, product, price):
-    if user_class.check_user_category(user_id, product, price):
+    if user_class.new_payment(user_id, product, price):
         bot.send_message(user_id, "мы нашли категорию для этого продукта")
         return
     else:
@@ -203,25 +216,28 @@ def get_statistics_for_period_two(mesg):
 
 @bot.message_handler(commands = ['report_for_current_month'])
 def report_for_current_month(message):
-    DATABASE.timecheck()
-    id = message.from_user.id
-    information = DATABASE.current_month_money_statistics(id)
-    statictics = ''
-    if information != 0:
-        for data in information:
-            statictics += "{}: {} р.\n".format(data[0],data[1])
-        bot.send_message(message.from_user.id, statictics)
-        vals = [data[1] for data in information]
-        labels = [data[0] for data in information]
-        #Следцющий for почему-то не работает
-        for l in range(len(labels)):
-            if vals[l] == 0:
-                labels[l] == ' '
-        get_circle_diagram(vals, labels)
-        img = open('diagram.png', 'rb')
-        bot.send_photo(message.from_user.id, img)
-    else:
-        bot.send_message(message.from_user.id, "Нет информации")
+    try:
+        DATABASE.timecheck()
+        id = message.from_user.id
+        information = DATABASE.current_month_money_statistics(id)
+        statictics = ''
+        if information != 0:
+            for data in information:
+                statictics += "{}: {} р.\n".format(data[0],data[1])
+            bot.send_message(message.from_user.id, statictics)
+            vals = [data[1] for data in information]
+            labels = [data[0] for data in information]
+            #Следцющий for почему-то не работает
+            for l in range(len(labels)):
+                if vals[l] == 0:
+                    labels[l] == ' '
+            get_circle_diagram(vals, labels)
+            img = open('diagram.png', 'rb')
+            bot.send_photo(message.from_user.id, img)
+        else:
+            bot.send_message(message.from_user.id, "Нет информации")
+    except Exception as error:
+        print (repr(error))
  
 
 @bot.message_handler(commands = ['report_for_current_year'])
@@ -261,13 +277,16 @@ def get_old_category(msg):
     bot.register_next_step_handler(new, get_category_for_rename)
 
 def get_category_for_rename(msg):
-    global tmp_data    
-    if user_class.change_category_name(msg.from_user.id, tmp_data, msg.text):
-        bot.send_message(msg.from_user.id, 'Здорово! Что-то еще?')
-        print_help(msg)
-    else:
-        bot.send_message(msg.from_user.id, 'такой категории нет')
-        print_help(msg)
+    try:
+        global tmp_data    
+        if user_class.change_category_name(msg.from_user.id, tmp_data, msg.text):
+            bot.send_message(msg.from_user.id, 'Здорово! Что-то еще?')
+            print_help(msg)
+        else:
+            bot.send_message(msg.from_user.id, 'такой категории нет')
+            print_help(msg)
+    except Exception as error:
+        print (repr(error))
 #позволяет менять категорию для продукта
 @bot.message_handler(commands = ['change_category_of_product'])
 def get_old_name_category(msg):
@@ -282,35 +301,38 @@ def get_new_name_category(msg):
     bot.register_next_step_handler(new, get_name_for_rename)
 
 def get_name_for_rename(msg):
-    if msg.forward_from != None:
-        try:
-            price = float(re.search(r'(\d|\.)+', msg.text).group(0))
-        except:
-            price = None
-            bot.send_message(msg.from_user.id, "Кажется, не подходит. Попробуй снова")
-        try:
-            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
-        except:
-            product = None
-            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
-        user_class.change_name_category(msg.from_user.id, price, product, tmp_data)
-        bot.send_message(msg.from_user.id, "Отлично")
-    elif msg.reply_to_message != None :
-        try:
-            price = float(re.search(r'(\d|\.)+', msg.reply_to_message.text).group(0))
-        except:
-            price = None
-            bot.send_message(msg.from_user.id, "Кажется, это не подходит. Попробуй снова")
-        try:
-            product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.reply_to_message.text).group(0))
-        except:
-            product = None
-            bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
-        user_class.change_name_category(msg.from_user.id, price, product, tmp_data)
-        bot.send_message(msg.from_user.id, "Отлично")
-    else:
-        bot.send_message(msg.from_user.id, "Произошла ошибка. Попробуй снова")
-    print_help(msg)
+    try:
+        if msg.forward_from != None:
+            try:
+                price = float(re.search(r'(\d|\.)+', msg.text).group(0))
+            except:
+                price = None
+                bot.send_message(msg.from_user.id, "Кажется, не подходит. Попробуй снова")
+            try:
+                product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.text).group(0))
+            except:
+                product = None
+                bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+            user_class.change_name_category(msg.from_user.id, price, product, tmp_data)
+            bot.send_message(msg.from_user.id, "Отлично")
+        elif msg.reply_to_message != None :
+            try:
+                price = float(re.search(r'(\d|\.)+', msg.reply_to_message.text).group(0))
+            except:
+                price = None
+                bot.send_message(msg.from_user.id, "Кажется, это не подходит. Попробуй снова")
+            try:
+                product = (re.search(r'([А-яЁё]|[a-zA-Z])+', msg.reply_to_message.text).group(0))
+            except:
+                product = None
+                bot.send_message(msg.from_user.id, "Кажется, что-то не так с названием покупки. Попробуй снова")
+            user_class.change_name_category(msg.from_user.id, price, product, tmp_data)
+            bot.send_message(msg.from_user.id, "Отлично")
+        else:
+            bot.send_message(msg.from_user.id, "Произошла ошибка. Попробуй снова")
+        print_help(msg)
+    except Exception as error:
+        print (repr(error))
 
 @bot.message_handler(commands = ['delete_purchase'])
 def get_name_for_delete_purchase(message):
@@ -349,16 +371,32 @@ def deleting_purchase(msg):
     else:
         bot.send_message(msg.from_user.id, "Кажется, что-то не так. Попробуй снова")
 
+@bot.message_handler(commands = ['delete_cetegory'])
+def get_name_for_delete_cat(message):
+    cat_delete = bot.send_message(message.from_user.id, "какую категорию хочешь удалить?")
+    bot.register_next_step_handler(purchase_delete, deleting_cat)
+
+def deleting_cat(msg):
+    if user_class.delete_cetegory(id, msg.text):
+        bot.send_message(msg.from_user.id, "Все получилось")
+    else:
+        bot.send_message(msg.from_user.id, "Такой категории нет или произошла ошибка на стороне сервера")
+
+
 colors = ['#e0b0ff', '#cda4de','#ad75ad', '#735184', '#8b5a96', '#dcd6f7', '#bd91c7', '#ffc0cb', '#eebef1', '#baacc7', '#dda0dd' ]
 def get_circle_diagram(vals, labels):
-    fig, ax = plt.subplots()
-    length = len(vals)
-    x = [0.01 for i in range (length)]
-    explode = tuple (x)
-    global colors
-    ax.pie(vals, labels=labels, explode=explode, colors = colors, autopct='%1.1f%%')
-    ax.axis("equal")
-    plt.savefig("diagram.png")
+    try:
+        fig, ax = plt.subplots()
+        length = len(vals)
+        x = [0.01 for i in range (length)]
+        explode = tuple (x)
+        global colors
+        random.shuffle(colors)
+        ax.pie(vals, labels=labels, explode=explode, colors = colors, autopct='%1.1f%%')
+        ax.axis("equal")
+        plt.savefig("diagram.png")
+    except Exception as error:
+        print (repr(error))
 
 
 DATABASE.timecheck()
