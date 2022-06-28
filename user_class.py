@@ -117,6 +117,4 @@ def add_to_category(user_id, category, product, price):
     except Exception as error:
         print ('ошибка в user_class.add_to_category', repr(error))
     
-
-
 number_of_days_monthly = [31, 28, 31, 30, 31, 30 ,31, 31, 30, 31, 30, 31]
