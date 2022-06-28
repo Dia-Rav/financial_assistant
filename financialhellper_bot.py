@@ -32,7 +32,7 @@ def print_help(message):
 Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев)")
     bot.register_next_step_handler(msg, get_number_for_history)
 
-def get_number_for_history(msg):
+def s(msg):
     try:
         msg = bot.send_message(msg.from_user.id, 'Спасибо! Приятного общения с ботом.')
     except Exception as error:
@@ -200,11 +200,12 @@ def get_statistics_for_period_two(mesg):
                     if data[1] != 0:
                         statictics += "  {}: {} р.\n".format(data[0],data[1])
         info_current_month = DATABASE.current_month_money_statistics(mesg.from_user.id)
-        if info_current_month != 0:#узнать что возвращает функция при отсутвии инфы
-            today = date.today()
-            statictics += '{}: \n'.format (names_of_month[today.month -1])
-            for data in info_current_month:
-                statictics += "  {}: {} р.\n".format(data[0],data[1])
+        today = date.today()
+        if int (mesg.text) ==  today.month:
+            if info_current_month != 0:#узнать что возвращает функция при отсутвии инфы
+                statictics += '{}: \n'.format (names_of_month[today.month -1])
+                for data in info_current_month:
+                    statictics += "  {}: {} р.\n".format(data[0],data[1])
         if statictics == '':
             bot.send_message(mesg.from_user.id, "нет информации за период")
         else:
@@ -402,5 +403,3 @@ def get_circle_diagram(vals, labels):
 DATABASE.timecheck()
 
 bot.polling(none_stop=True, interval=0)
-
-
