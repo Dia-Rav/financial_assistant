@@ -196,8 +196,12 @@ def get_statistics_for_period_two(mesg):
     period_labels = []
     period_values = []
     try:
-        period_labels = [i for i in range(tmp_data, int(mesg.text)+1)]
-        for i in range(tmp_data, int(mesg.text)):
+        period_labels = [names_of_month[i-1] for i in range(tmp_data, int(mesg.text)+1)]
+        flag = 0
+        today = date.today()
+        if int(mesg.text) == today.month:
+            flag = 1
+        for i in range(tmp_data, int(mesg.text) + 1 - flag):
             sum_i = 0
             information = DATABASE.month_money_statistics(mesg.from_user.id, i)
             if information != 0:
@@ -223,13 +227,14 @@ def get_statistics_for_period_two(mesg):
                     sum_current+=data[1]
                     statictics += "  {}: {} р.\n".format(data[0],data[1])
             period_values.append(sum_current)
-
+        print(period_values)
+        print(period_labels)
         if statictics == '':
             bot.send_message(mesg.from_user.id, "нет информации за период")
         else:
             bot.send_message(mesg.from_user.id, statictics)
-        get_graphic(period_label, period_values)
-        img = open('graphic.png', 'rb')
+        get_bar_diagram(period_labels, period_values)
+        img = open('bar.png', 'rb')
         bot.send_photo(mesg.from_user.id, img)
     except Exception as error:
         print(repr(error))
@@ -422,10 +427,10 @@ def get_circle_diagram(vals, labels):
     except Exception as error:
         print (repr(error))
 
-def get_graphic(labels, vals):
+def get_bar_diagram(labels, vals):
     try:
-        plt.plot(labels, vals)
-        plt.savefig("graphic.png")
+        plt.bar(labels, vals)
+        plt.savefig("bar.png")
     except Exception as error:
         print(repr(error))
 
