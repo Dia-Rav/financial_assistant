@@ -32,11 +32,36 @@ def print_help(message):
 Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев)")
     bot.register_next_step_handler(msg, get_number_for_history)
 
-def s(msg):
+def get_number_for_history(msg):
     try:
-        msg = bot.send_message(msg.from_user.id, 'Спасибо! Приятного общения с ботом.')
+        global tmp_data
+        tmp_data = int(msg.text)
+        msg = bot.send_message(msg.from_user.id, 'Спасибо! Какой ограничение ты хочешь установить на ежемесячные траты?')
+        bot.register_next_step_handler(msg, get_limit_bot)
     except Exception as error:
         print (repr(error))
+
+def get_limit_bot(msg):
+    try:
+        id = msg.from_user.id
+        limit = float(msg.text)
+        if 0 < tmp_data < 11 and limit > 0:
+            DATABASE.start_settings(id, tmp_data, limit)
+        elif limit > 0:
+            DATABASE.start_settings(id, 11, limit)
+        else:
+            DATABASE.start_settings(id)
+    except Exception as error:
+        print (repr(error))
+
+@bot.message_handler(commands=['new_limit'])
+def setup_new_limit(msg):
+    msg = bot.send_message(msg.from_user.id, 'напиши новое ограничение')
+    bot.register_next_step_handler(msg, get_new_limit)
+
+
+def get_new_limit(msg):
+    DATABASE.change_limit(msg.from_user.id, msg.text) 
 
 
 @bot.message_handler(commands=['help'])
@@ -94,7 +119,6 @@ def creating_survey_about_category (user_id, category_offers, product, price):
 def get_category_for_new_purchase(message):
     global new_purchase
     bot.send_message(message.from_user.id, 'Здорово! Что-то еще?')
-    print_help(message)
     #(user_id, category, product, price)
     user_class.add_to_category(message.from_user.id, message.text, new_purchase[0], new_purchase[1])
 
@@ -121,8 +145,12 @@ def get_bought(msg):
         bot.send_message(user_id, "Кажется, что-то не так с названием покупки. Попробуй снова")
     #Добиваюсь корректного ввода от пользователя
     if product!=None and price !=None:
-            bot.send_message(user_id, 
-            "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(price),product))
+            leftover = check_limit(user_id)
+            if 0 <= leftover < 300:
+                bot.send_message(user_id, 'У тебя осталось {} р. на траты в этом месяце'.format(leftover))
+            elif leftover < 0:
+                bot.send_message(user_id, 'ты превысил траты в этой месяце на {} (просто предупреждаю)'.format(leftover))
+            bot.send_message(user_id, "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(price),product))
             keyboard_new_bought = types.InlineKeyboardMarkup()  # наша клавиатура
             key_yes_knb = types.InlineKeyboardButton(text='Да', callback_data='yes')  # кнопка «Да»
             keyboard_new_bought.add(key_yes_knb)  # добавляем кнопку в клавиатуру
@@ -147,7 +175,38 @@ def get_bought(msg):
                     bot.send_message(tmp_data, answer)
                     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
 
+@bot.message_handler(commands = ['limit'])
+def return_limit (msg):
+    try:
+        leftover = check_limit(msg.from_user.id)
+        print (leftover)
+        if leftover != float ('inf') and leftover >= 0:
+            bot.send_message(msg.from_user.id, leftover)
+        elif leftover < 0:
+            bot.send_message(msg.from_user.id, 'ты превысил ограничение на {}'.format(-leftover) )
+        else:
+            bot.send_message(msg.from_user.id, 'не найдено ограничений')
+    except Exception as error:
+        print (repr(error))
 
+
+def check_limit(id):
+    try:
+        limit = DATABASE.get_limit(id)
+        info = DATABASE.current_month_money_statistics(id)
+        sum = 0
+        print (info)
+        if info!= 0:
+            for data in info:
+                sum+= data[1]
+        if limit != float ('inf'):
+            return limit-sum
+        else:
+            return float ('inf')
+    except Exception as error:
+        
+        print (repr(error))
+        return float ('inf')
 
 #позволяет получить статистику за определнный месяц
 @bot.message_handler(commands = ['report_for_month'])
@@ -191,7 +250,6 @@ def get_statistics_for_period_one(mesg):
 def get_statistics_for_period_two(mesg):
 
     global tmp_data
-    print(tmp_data)
     statictics = ''
     period_labels = []
     period_values = []
@@ -239,9 +297,6 @@ def get_statistics_for_period_two(mesg):
     except Exception as error:
         print(repr(error))
         bot.send_message(mesg.from_user.id, "неверный ввод")
-
-
-
 
 @bot.message_handler(commands = ['report_for_current_month'])
 def report_for_current_month(message):
