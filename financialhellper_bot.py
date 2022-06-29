@@ -250,7 +250,11 @@ def get_statistics_for_period_two(mesg):
     global tmp_data
     statictics = ''
     try:
-        for i in range (tmp_data, int(mesg.text)+1):
+        flag = 0
+        today = date.today()
+        if int (mesg.text) ==  today.month:
+            flag = 1
+        for i in range (tmp_data, int(mesg.text)+1-flag):
             information = DATABASE.month_money_statistics(mesg.from_user.id, i)
             if information != 0:
                 statictics += '{}: \n'.format (names_of_month[i-1])
@@ -258,8 +262,8 @@ def get_statistics_for_period_two(mesg):
                     if data[1] != 0:
                         statictics += "  {}: {} р.\n".format(data[0],data[1])
         info_current_month = DATABASE.current_month_money_statistics(mesg.from_user.id)
-        today = date.today()
-        if int (mesg.text) ==  today.month:
+
+        if flag == 1 :
             if info_current_month != 0:#узнать что возвращает функция при отсутвии инфы
                 statictics += '{}: \n'.format (names_of_month[today.month -1])
                 for data in info_current_month:
