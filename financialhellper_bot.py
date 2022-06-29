@@ -48,9 +48,9 @@ def get_limit_bot(msg):
         limit = float(msg.text)
         print (limit, tmp_data)
         if 0 < tmp_data < 11 and limit > 0:
-            DATABASE.start_settings(id, expiration_date = tmp_data,  limit = limit)
+            DATABASE.start_settings(id, tmp_data, limit)
         elif limit > 0:
-            DATABASE.start_settings(id, limit = limit)
+            DATABASE.start_settings(id, 11, limit)
         else:
             DATABASE.start_settings(id)
     except Exception as error:
@@ -151,6 +151,7 @@ def get_bought(msg):
     #Добиваюсь корректного ввода от пользователя
     if product!=None and price !=None:
             leftover = check_limit(user_id)
+            print (leftover)
             if 0 <= leftover < 300:
                 bot.send_message(user_id, 'У тебя осталось {} р. на траты в этом месяце'.format(leftover))
             elif leftover < 0:
@@ -184,10 +185,13 @@ def get_bought(msg):
 def return_limit (msg):
     try:
         leftover = check_limit(msg.from_user.id)
-        if leftover != float ('+inf') and leftover >= 0:
+        if leftover != float ('inf') and leftover >= 0:
             bot.send_message(msg.from_user.id, leftover)
         elif leftover < 0:
             bot.send_message(msg.from_user.id, 'ты превысил ограничение на {}'.format(-leftover) )
+
+        elif leftover  == float ('inf'):
+                bot.send_message(msg.from_user.id, 'не найдено ограничений')
     except Exception as error:
         print (repr(error))
 
@@ -200,10 +204,10 @@ def check_limit(id):
         if info!= 0:
             for data in info:
                 sum!= data[1]
-        if limit != float ('+inf'):
+        if limit != float ('inf'):
             return limit-sum
         else:
-            return float ('+inf')
+            return float ('inf')
     except Exception as error:
         print (repr(error))
 
