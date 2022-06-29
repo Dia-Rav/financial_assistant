@@ -39,7 +39,7 @@ def delete_cetegory(id, cat):
     categories = current_user.categories
     try:
         if cat in categories:
-            delete_category_DATABASE(id, cat)
+            DATABASE.delete_category_DATABASE(id, cat)
             del current_user.categories[cat]
             return True
         else:

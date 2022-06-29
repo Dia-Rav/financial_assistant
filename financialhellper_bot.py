@@ -63,18 +63,35 @@ def get_limit_bot(msg):
 
 @bot.message_handler (commands=['new_limit'])
 def setup_new_limit(msg):
-    msg = bot.send_message(msg.from_user.id, 'Напиши новое ограничение')
+    msg = bot.send_message(msg.from_user.id, 'Напиши новое ограничение, или 0, если хочешь его убрать')
     bot.register_next_step_handler(msg, get_new_limit)
 
 
 def get_new_limit(msg):
     try:
-        if msg.text > 0:
-            DATABASE.change_limit(msg.from_user.id, msg.text)
+        if int(msg.text) > 0:
+            DATABASE.change_limit(msg.from_user.id, int(msg.text))
             bot.send_message(msg.from_user.id, 'Лимит успешно установлен')
         else:
-            DATABASE.change_limit(msg.from_user.id, float(inf))
+            DATABASE.change_limit(msg.from_user.id, float('inf'))
             bot.send_message(msg.from_user.id, 'Лимит успешно установлен')
+    except Exception as error:
+        print(repr(error))
+
+@bot.message_handler (commands=['new_period_history'])
+def setup_new_period_history(msg):
+    msg = bot.send_message(msg.from_user.id, 'Напиши новое ограничение для хранения неиспользуемых категорий, или -1, если хочешь его убрать')
+    bot.register_next_step_handler(msg, get_new_hist)
+
+def get_new_hist(msg):
+    try:
+        id = msg.from_user.id
+        if int(msg.text) >= 0:
+            DATABASE.change_expiration_period(id, int(msg.text))
+            bot.send_message(id, 'Лимит успешно установлен')
+        else:
+            DATABASE.change_expiration_period(id, 11)
+            bot.send_message(id, 'Лимит успешно установлен')
     except Exception as error:
         print(repr(error))
 
@@ -167,7 +184,7 @@ def get_bought(msg):
     if product != None and price != None:
         leftover = check_limit(user_id)
         if 0 <= leftover < 300:
-            bot.send_message(user_id, 'У тебя осталось {} р. на траты в этом месяце'.format(leftover))
+            bot.send_message(user_id, 'У тебя осталось {} р. на траты в этом месяце (дружеское напоминание)'.format(leftover))
         elif leftover < 0:
             bot.send_message(user_id, 'ты превысил траты в этой месяце на {} (просто предупреждаю)'.format(leftover))
         bot.send_message(user_id, "Вот данные, что я получил:\n Цена: {} \n Название: {} ".format(str(price), product))
@@ -201,13 +218,12 @@ def get_bought(msg):
 def return_limit(msg):
     try:
         leftover = check_limit(msg.from_user.id)
-        print(leftover)
         if leftover != float('inf') and leftover >= 0:
             bot.send_message(msg.from_user.id, "Ограничние не превышено. Ты еще можешь потратить {}р.".format(leftover) )
         elif leftover < 0:
-            bot.send_message(msg.from_user.id, 'ты превысил ограничение на {}'.format(-leftover))
+            bot.send_message(msg.from_user.id, 'Ты превысил ограничение на {}. Напомню, что ограничение: {} р.'.format(-leftover, DATABASE.get_limit(id)))
         else:
-            bot.send_message(msg.from_user.id, 'не найдено ограничений')
+            bot.send_message(msg.from_user.id, 'Не найдено ограничений.')
     except Exception as error:
         print(repr(error))
 
@@ -217,7 +233,6 @@ def check_limit(id):
         limit = DATABASE.get_limit(id)
         info = DATABASE.current_month_money_statistics(id)
         sum = 0
-        print(info)
         if info != 0:
             for data in info:
                 sum += data[1]
@@ -314,8 +329,6 @@ def get_statistics_for_period_two(mesg):
                     sum_current += data[1]
                     statictics += "  {}: {} р.\n".format(data[0], data[1])
             period_values.append(sum_current)
-        print(period_values)
-        print(period_labels)
         if statictics == '':
             bot.send_message(mesg.from_user.id, "нет информации за период")
         else:
@@ -397,10 +410,8 @@ def get_category_for_rename(msg):
         global tmp_data
         if user_class.change_category_name(msg.from_user.id, tmp_data, msg.text):
             bot.send_message(msg.from_user.id, 'Здорово! Что-то еще?')
-            print_help(msg)
         else:
             bot.send_message(msg.from_user.id, 'такой категории нет')
-            print_help(msg)
     except Exception as error:
         print(repr(error))
 
@@ -450,7 +461,6 @@ def get_name_for_rename(msg):
             bot.send_message(msg.from_user.id, "Отлично")
         else:
             bot.send_message(msg.from_user.id, "Произошла ошибка. Попробуй снова")
-        print_help(msg)
     except Exception as error:
         print(repr(error))
 
@@ -498,11 +508,11 @@ def deleting_purchase(msg):
 @bot.message_handler(commands=['delete_cetegory'])
 def get_name_for_delete_cat(message):
     cat_delete = bot.send_message(message.from_user.id, "какую категорию хочешь удалить?")
-    bot.register_next_step_handler(purchase_delete, deleting_cat)
+    bot.register_next_step_handler(cat_delete, deleting_cat)
 
 
 def deleting_cat(msg):
-    if user_class.delete_cetegory(id, msg.text):
+    if user_class.delete_cetegory(msg.from_user.id, msg.text):
         bot.send_message(msg.from_user.id, "Все получилось")
     else:
         bot.send_message(msg.from_user.id, "Такой категории нет или произошла ошибка на стороне сервера")
@@ -529,6 +539,8 @@ def get_circle_diagram(vals, labels):
 
 def get_bar_diagram(labels, vals):
     try:
+        global colors
+        random.shuffle(colors)
         plt.bar(labels, vals, color=colors)
         plt.savefig("bar.png")
     except Exception as error:
