@@ -32,16 +32,19 @@ def print_help(message):
 Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев)")
     bot.register_next_step_handler(msg, get_number_for_history)
 
-def s(msg):
+def get_number_for_history(msg):
     try:
-        msg = bot.send_message(msg.from_user.id, 'Спасибо! Приятного общения с ботом.')
+        global tmp_data
+        tmp_data = int(msg.text)
+        msg = bot.send_message(msg.from_user.id, 'Спасибо! Какой ограничение ты хочешь установить на ежемесячные траты?')
+        bot.register_next_step_handler(msg, get_limit_bot)
     except Exception as error:
         print (repr(error))
 
 def get_limit_bot(msg):
     try:
+        id = msg.from_user.id
         limit = float(msg.text)
-        print (limit, tmp_data)
         if 0 < tmp_data < 11 and limit > 0:
             DATABASE.start_settings(id, tmp_data, limit)
         elif limit > 0:
@@ -107,7 +110,6 @@ def creating_survey_about_category (user_id, category_offers, product, price):
 def get_category_for_new_purchase(message):
     global new_purchase
     bot.send_message(message.from_user.id, 'Здорово! Что-то еще?')
-    print_help(message)
     #(user_id, category, product, price)
     user_class.add_to_category(message.from_user.id, message.text, new_purchase[0], new_purchase[1])
 
@@ -135,7 +137,6 @@ def get_bought(msg):
     #Добиваюсь корректного ввода от пользователя
     if product!=None and price !=None:
             leftover = check_limit(user_id)
-            print (leftover)
             if 0 <= leftover < 300:
                 bot.send_message(user_id, 'У тебя осталось {} р. на траты в этом месяце'.format(leftover))
             elif leftover < 0:
@@ -169,13 +170,13 @@ def get_bought(msg):
 def return_limit (msg):
     try:
         leftover = check_limit(msg.from_user.id)
+        print (leftover)
         if leftover != float ('inf') and leftover >= 0:
             bot.send_message(msg.from_user.id, leftover)
         elif leftover < 0:
             bot.send_message(msg.from_user.id, 'ты превысил ограничение на {}'.format(-leftover) )
-
-        elif leftover  == float ('inf'):
-                bot.send_message(msg.from_user.id, 'не найдено ограничений')
+        else:
+            bot.send_message(msg.from_user.id, 'не найдено ограничений')
     except Exception as error:
         print (repr(error))
 
@@ -183,17 +184,20 @@ def return_limit (msg):
 def check_limit(id):
     try:
         limit = DATABASE.get_limit(id)
-        info= DATABASE.current_month_money_statistics(id)
+        info = DATABASE.current_month_money_statistics(id)
         sum = 0
+        print (info)
         if info!= 0:
             for data in info:
-                sum!= data[1]
+                sum+= data[1]
         if limit != float ('inf'):
             return limit-sum
         else:
             return float ('inf')
     except Exception as error:
+        
         print (repr(error))
+        return float ('inf')
 
 #позволяет получить статистику за определнный месяц
 @bot.message_handler(commands = ['report_for_month'])
