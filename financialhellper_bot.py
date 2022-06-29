@@ -53,7 +53,16 @@ def get_limit_bot(msg):
             DATABASE.start_settings(id)
     except Exception as error:
         print (repr(error))
-            
+
+@bot.message_handler(commands=['new_limit'])
+def setup_new_limit(msg):
+    msg = bot.send_message(msg.from_user.id, 'напиши новое ограничение')
+    bot.register_next_step_handler(msg, get_new_limit)
+
+
+def get_new_limit(msg):
+    DATABASE.change_limit(msg.from_user.id, msg.text) 
+
 
 @bot.message_handler(commands=['help'])
 def print_help(message):
