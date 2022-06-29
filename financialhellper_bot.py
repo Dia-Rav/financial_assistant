@@ -31,7 +31,7 @@ def print_help(message):
 /report_for_current_month - отчет по тратам за текущий месяц\n \
 /report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
 Также можно вызвать функцию /limit для проверки сколько тебе осталось до ограничения или /new_limit, чтобы установить новый. \n \
-Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев)")
+Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев), или -1, если не хочешь ограничений")
     bot.register_next_step_handler(msg, get_number_for_history)
 
 
@@ -40,7 +40,7 @@ def get_number_for_history(msg):
         global tmp_data
         tmp_data = int(msg.text)
         msg = bot.send_message(msg.from_user.id,
-                               'Спасибо! Какое ограничение ты хочешь установить на ежемесячные траты?')
+                               'Спасибо! Какое ограничение ты хочешь установить на ежемесячные траты? Ввели цифрй или 0, не не хочешь себя ограничивать')
         bot.register_next_step_handler(msg, get_limit_bot)
     except Exception as error:
         print(repr(error))
@@ -56,22 +56,27 @@ def get_limit_bot(msg):
             DATABASE.start_settings(id, 11, limit)
         else:
             DATABASE.start_settings(id)
-        bot.send_message(msg.from_user.id,
-                         'Лимит успешно установлен')
+        bot.send_message(msg.from_user.id, 'Лимит успешно установлен')
     except Exception as error:
         print(repr(error))
 
 
-@bot.message_handler(commands=['new_limit'])
+@bot.message_handler (commands=['new_limit'])
 def setup_new_limit(msg):
     msg = bot.send_message(msg.from_user.id, 'Напиши новое ограничение')
     bot.register_next_step_handler(msg, get_new_limit)
 
 
 def get_new_limit(msg):
-    DATABASE.change_limit(msg.from_user.id, msg.text)
-    bot.send_message(msg.from_user.id,
-                     'Лимит успешно установлен')
+    try:
+        if msg.text > 0:
+            DATABASE.change_limit(msg.from_user.id, msg.text)
+            bot.send_message(msg.from_user.id, 'Лимит успешно установлен')
+        else:
+            DATABASE.change_limit(msg.from_user.id, float(inf))
+            bot.send_message(msg.from_user.id, 'Лимит успешно установлен')
+    except Exception as error:
+        print(repr(error))
 
 @bot.message_handler(commands=['help'])
 def print_help(message):
