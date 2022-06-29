@@ -35,11 +35,11 @@ def new_payment(user_id, product, price):
         print ('ошибка в user_class.new_payment', repr(error))
 
 def delete_cetegory(id, cat):
-    current_user = users_in_contact.get(user_id, user(user_id))
+    current_user = users_in_contact.get(id, user(id))
     categories = current_user.categories
     try:
         if cat in categories:
-            DATABASE.delete_cat()
+            delete_category_DATABASE(id, cat)
             del current_user.categories[cat]
             return True
         else:
