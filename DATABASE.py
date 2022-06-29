@@ -337,30 +337,32 @@ def timecheck():
         cursor.execute(MONEY_select_query, (current_month,))
         records = cursor.fetchall()
         if records == []:
+            months = list(range(1, 12))
             MONEY_select_query = """SELECT * FROM MONEY"""
             cursor.execute(MONEY_select_query)
             records = cursor.fetchall()
             for id, category, money, month in records:
+                if month in months:
+                    months.pop(months.index(month))
+                    deletion = """DELETE from STATISTICS where month = ?"""
+                    cursor.execute(deletion, (month,))
+                    sqlite_connection.commit()
                 if money > 0:
-                    check_existance = """select id from STATISTICS where id = ? and category = ? and month = ?"""
-                    cursor.execute(check_existance, (id, category, month, ))
-                    record = cursor.fetchall()
-                    if record == []:
-                        sqlite_insert_STATISTICS = """INSERT INTO STATISTICS
-                                            (id, category, money_spent, month)
-                                            VALUES (?, ?, ?, ?);"""
-                        data = (id, category, money, month)
+                    sqlite_insert_STATISTICS = """INSERT INTO STATISTICS
+                                        (id, category, money_spent, month)
+                                        VALUES (?, ?, ?, ?);"""
+                    data = (id, category, money, month)
 
-                        cursor.execute(sqlite_insert_STATISTICS, data)
-                        sqlite_connection.commit()
-                    else:
-                        sqlite_update_STATISTICS = """Update STATISTICS set money_spent = ? where id = ? and category = ? and month = ?"""
-                        data = (money, id, category, month)
-                        cursor.execute(sqlite_update_STATISTICS, data)
-                        sqlite_connection.commit()
+                    cursor.execute(sqlite_insert_STATISTICS, data)
+                    sqlite_connection.commit()
+                else:
+                    period = current_month - month
+                    expiration_period = get_expiration_period(id)
+                    if (period > 0 and period >= expiration_period) or (period < 0 and period + 12 >= expiration_period):
+                        delete_category_DATABASE(id, category, 0, cursor, sqlite_connection)
 
-            sqlite_update_MONEY = """Update MONEY set money_spent = ?, last_change_month = ?"""
-            cursor.execute(sqlite_update_MONEY, (0, month_today(cursor, sqlite_connection, )))
+            sqlite_update_MONEY = """Update MONEY set money_spent = ?, last_change_month = ? where money_spent != 0"""
+            cursor.execute(sqlite_update_MONEY, (0, current_month))
             sqlite_connection.commit()
         
         cursor.close()
@@ -371,25 +373,27 @@ def timecheck():
         if sqlite_connection:
             sqlite_connection.close()
 
-def start_settings(id, expiration_period = 11, limit = float('+inf')):
+def start_settings(id, expiration_period = 11, limit = float('+inf'), flag = 1, cursor = 0, sqlite_connection = 0):
     try:
-        sqlite_connection = sqlite3.connect('DATABASE.db')
-        cursor = sqlite_connection.cursor()
+        if flag == 1:
+            sqlite_connection = sqlite3.connect('DATABASE.db')
+            cursor = sqlite_connection.cursor()
         
         set_SETTINGS = """INSERT INTO SETTINGS
                               (id, expiration_period, user_limit)
                               VALUES (?, ?, ?);"""
-        settings = (id, expiration_period, limit)
+        settings = (id, expiration_period, limit,)
 
         cursor.execute(set_SETTINGS, settings)
         sqlite_connection.commit()
 
-        cursor.close()
+        if flag == 1:
+            cursor.close()
 
     except sqlite3.Error as error:
         print("Ошибка в блоке start_settings: ", error)
     finally:
-        if sqlite_connection:
+        if flag == 1 and sqlite_connection:
             sqlite_connection.close()
 
 def change_expiration_period(id, new_period = 11):
@@ -446,6 +450,26 @@ def get_limit(id):
 
     except sqlite3.Error as error:
         print("Ошибка в блоке get_limit: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def get_expiration_period(id):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+        
+        get_expiration_period = """SELECT expiration_period from SETTINGS where id = ?"""
+
+        cursor.execute(get_expiration_period, (id,))
+        expiration_period = cursor.fetchall()[0][0]
+        sqlite_connection.commit()
+
+        cursor.close()
+        return expiration_period
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке get_expiration_period: ", error)
     finally:
         if sqlite_connection:
             sqlite_connection.close()
@@ -700,6 +724,62 @@ def year_money_statistics(user_id, start = 1, finish = 12):
         if sqlite_connection:
             sqlite_connection.close()
 
+def delete_category_DATABASE(id, category, flag = 1, cursor = 0, sqlite_connection = 0):
+    try:
+        if flag == 1:
+            sqlite_connection = sqlite3.connect('DATABASE.db')
+            cursor = sqlite_connection.cursor()
+
+        sql_delete_query = """DELETE from MONEY where id = ? and category = ?"""
+        cursor.execute(sql_delete_query, (id, category))
+        sqlite_connection.commit()
+
+        sql_delete_query = """DELETE from WORDS_CATEGORIES where id = ? and category = ?"""
+        cursor.execute(sql_delete_query, (id, category))
+        sqlite_connection.commit()
+
+        FREQUENCY_update_query = """Update FREQUENCY set frequency = frequency - 1 where category = ?"""
+        cursor.execute(FREQUENCY_update_query, (category,))                                                     #понижаем частоту слов, так как у них поменялась категория
+        sqlite_connection.commit()
+
+        cleaning(cursor, sqlite_connection)
+        if flag == 1:
+            cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке delete_category_DATABASE: ", error)
+    finally:
+        if flag == 1 and sqlite_connection:
+            sqlite_connection.close()
+
+def set_ALL_missing_settings_default():
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+
+        all_id_selection = """SELECT id from MONEY"""
+        cursor.execute(all_id_selection)
+        all_id = cursor.fetchall()
+        ids = []
+        for el in all_id:
+            if el[0] not in ids:
+                ids.append(el[0])
+        for id in ids:
+            selection = """SELECT id from SETTINGS where id = ?"""
+            cursor.execute(selection, (id,))
+            existance = cursor.fetchall()
+            if existance == []:
+                start_settings(id, 11, float('+inf'), 0, cursor, sqlite_connection)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке start_settings: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+
 if __name__ == '__main__':
     #timecheck()
     #payment(454610810, 'одежда', 80)
@@ -713,4 +793,6 @@ if __name__ == '__main__':
     #insert_new_category(999911111, 'drink', 'milk', 80)
     #insert_new_category(000000000, '???', '???', float('+inf'))
     #current_month_money_statistics(user_id)
+    #delete_category_DATABASE(0, '???')
+    #set_ALL_missing_settings_default()
     pass
