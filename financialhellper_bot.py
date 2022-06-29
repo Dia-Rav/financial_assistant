@@ -29,17 +29,12 @@ def print_help(message):
 /report_for_current_month - отчет по тратам за текущий месяц\n \
 /report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
 Также можно вызвать функцию /limit для проверки сколько тебе осталось до ограничения или /new_limit, чтобы установить новый. \n \
-Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев не больше 11 и -1, если не хочешь ставить ограничение)")
+Теперь мне нужно немного информации о тебе: как долго мне следует хранить категорию, которой ты не пользуешься? (введи кол-во месяцев)")
     bot.register_next_step_handler(msg, get_number_for_history)
 
-def get_number_for_history(msg):
+def s(msg):
     try:
-        limit_month = int(msg.text)
-        global tmp_data
-        tmp_data = limit_month
-        mesg = bot.send_message(msg.from_user.id, 'какой ежемесячный лимит ты хочешь установить (бот будет просто предупреждать), \
-напиши 0, если не хочешь себя ограничивать. Ты всегда сможешь его изменить.')
-        bot.register_next_step_handler(msg, get_limit_bot)
+        msg = bot.send_message(msg.from_user.id, 'Спасибо! Приятного общения с ботом.')
     except Exception as error:
         print (repr(error))
 
@@ -67,65 +62,54 @@ def print_help(message):
 /report_for_period - отчет по тратам за несколько месяцев последнего года\n \
 /report_for_current_month - отчет по тратам за текущий месяц\n \
 /report_for_current_year - отчет по тратам за год (кроме текщего месяца)\n \
-/delete_cetegory - удаление категории\n \
-/limit - проверка сколько тебе осталось до ограничения\n \
-/new_limit - установить новый лимит \n ")
+")
 
 #обработка продукта, находит категорию или спрашивает пользователя
 def processing_purchase(user_id, product, price):
-    try:
-        if user_class.new_payment(user_id, product, price):
-            bot.send_message(user_id, "мы нашли категорию для этого продукта")
-            return
+    if user_class.new_payment(user_id, product, price):
+        bot.send_message(user_id, "мы нашли категорию для этого продукта")
+        return
+    else:
+        category_offers = []
+        category_offers = DATABASE.category_statistics(product)
+        if len(category_offers)>0:
+            creating_survey_about_category (user_id, category_offers, product, price)
         else:
-            category_offers = []
-            category_offers = DATABASE.category_statistics(product)
-            if len(category_offers)>0:
-                creating_survey_about_category (user_id, category_offers, product, price)
-            else:
-                global new_purchase
-                new_purchase = (product, price) 
-                msg = bot.send_message(user_id, 'назови категорию для продукта')
-                bot.register_next_step_handler(msg, get_category_for_new_purchase)
-    except Exception as error:
-        print (repr(error))
+            global new_purchase
+            new_purchase = (product, price) 
+            msg = bot.send_message(user_id, 'назови категорию для продукта')
+            bot.register_next_step_handler(msg, get_category_for_new_purchase)
 #клавиатура с предложением категорий
 def creating_survey_about_category (user_id, category_offers, product, price):
-    try:
-        keyboard_categories = types.InlineKeyboardMarkup() # наша клавиатура
-        for cat in category_offers:
-            key_knb = types.InlineKeyboardButton(text = cat, callback_data = cat)
-            keyboard_categories.add(key_knb)  # добавляем кнопку в клавиатуру
-        key_idk = types.InlineKeyboardButton(text = 'другое..', callback_data = '0')
-        keyboard_categories.add(key_idk) 
-        bot.send_message(user_id, 'выбери категорию', reply_markup = keyboard_categories)
-        category_offers.append ('0')
-        @bot.callback_query_handler(func=lambda call: call.data in category_offers)
-        def cat_handler(call):
-            bot.answer_callback_query(callback_query_id=call.id, text='Круто!')
-            if call.data != '0':
-                #(user_id, category, product, price)
-                user_class.add_to_category(user_id, call.data, product, price)
-                bot.edit_message_reply_markup(user_id, call.message.message_id)
-            else:  
-                bot.edit_message_reply_markup(user_id, call.message.message_id)   
-                global new_purchase 
-                new_purchase = (product, price)                 
-                msg = bot.send_message(user_id, 'назови свой вариант')
-                bot.register_next_step_handler(msg, get_category_for_new_purchase)
-    except Exception as error:
-        print (repr(error))
+    keyboard_categories = types.InlineKeyboardMarkup() # наша клавиатура
+    for cat in category_offers:
+        key_knb = types.InlineKeyboardButton(text = cat, callback_data = cat)
+        keyboard_categories.add(key_knb)  # добавляем кнопку в клавиатуру
+    key_idk = types.InlineKeyboardButton(text = 'другое..', callback_data = '0')
+    keyboard_categories.add(key_idk) 
+    bot.send_message(user_id, 'выбери категорию', reply_markup = keyboard_categories)
+    category_offers.append ('0')
+    @bot.callback_query_handler(func=lambda call: call.data in category_offers)
+    def cat_handler(call):
+        bot.answer_callback_query(callback_query_id=call.id, text='Круто!')
+        if call.data != '0':
+            #(user_id, category, product, price)
+            user_class.add_to_category(user_id, call.data, product, price)
+            bot.edit_message_reply_markup(user_id, call.message.message_id)
+        else:  
+            bot.edit_message_reply_markup(user_id, call.message.message_id)   
+            global new_purchase 
+            new_purchase = (product, price)                 
+            msg = bot.send_message(user_id, 'назови свой вариант')
+            bot.register_next_step_handler(msg, get_category_for_new_purchase)
 
 #вызывается в случае отсутствия категории для продукта или если пользователь хочет свою
 def get_category_for_new_purchase(message):
-    try:
-        global new_purchase
-        bot.send_message(message.from_user.id, 'Здорово! Что-то еще?')
-        print_help(message)
-        #(user_id, category, product, price)
-        user_class.add_to_category(message.from_user.id, message.text, new_purchase[0], new_purchase[1])
-    except Exception as error:
-        print (repr(error))
+    global new_purchase
+    bot.send_message(message.from_user.id, 'Здорово! Что-то еще?')
+    print_help(message)
+    #(user_id, category, product, price)
+    user_class.add_to_category(message.from_user.id, message.text, new_purchase[0], new_purchase[1])
 
 
 #добавление новой покупки
@@ -251,34 +235,58 @@ def get_statistics_for_period_one(mesg):
     bot.register_next_step_handler(mesg, get_statistics_for_period_two)
 
 def get_statistics_for_period_two(mesg):
+
     global tmp_data
+    print(tmp_data)
     statictics = ''
+    period_labels = []
+    period_values = []
     try:
+        period_labels = [names_of_month[i-1] for i in range(tmp_data, int(mesg.text)+1)]
         flag = 0
         today = date.today()
-        if int (mesg.text) ==  today.month:
+        if int(mesg.text) == today.month:
             flag = 1
-        for i in range (tmp_data, int(mesg.text)+1-flag):
+        for i in range(tmp_data, int(mesg.text) + 1 - flag):
+            sum_i = 0
             information = DATABASE.month_money_statistics(mesg.from_user.id, i)
             if information != 0:
-                statictics += '{}: \n'.format (names_of_month[i-1])
-                for data in information:
-                    if data[1] != 0:
-                        statictics += "  {}: {} р.\n".format(data[0],data[1])
-        info_current_month = DATABASE.current_month_money_statistics(mesg.from_user.id)
 
-        if flag == 1 :
+                statictics += '{}: \n'.format(names_of_month[i-1])
+                for data in information:
+                    sum_i+=data[1]
+                    if data[1] != 0:
+                        statictics += "  {}: {} р.\n".format(data[0], data[1])
+            if information == 0:
+                statictics += '{}: \n'.format(names_of_month[i - 1])
+                statictics += 'За данный месяц нет информации \n'
+
+            period_values.append(sum_i)
+
+        info_current_month = DATABASE.current_month_money_statistics(mesg.from_user.id)
+        today = date.today()
+        if int(mesg.text) == today.month:
+            sum_current = 0
             if info_current_month != 0:#узнать что возвращает функция при отсутвии инфы
                 statictics += '{}: \n'.format (names_of_month[today.month -1])
                 for data in info_current_month:
+                    sum_current+=data[1]
                     statictics += "  {}: {} р.\n".format(data[0],data[1])
+            period_values.append(sum_current)
+        print(period_values)
+        print(period_labels)
         if statictics == '':
             bot.send_message(mesg.from_user.id, "нет информации за период")
         else:
             bot.send_message(mesg.from_user.id, statictics)
+        get_bar_diagram(period_labels, period_values)
+        img = open('bar.png', 'rb')
+        bot.send_photo(mesg.from_user.id, img)
     except Exception as error:
-        print (repr(error))
+        print(repr(error))
         bot.send_message(mesg.from_user.id, "неверный ввод")
+
+
 
 
 @bot.message_handler(commands = ['report_for_current_month'])
@@ -464,6 +472,13 @@ def get_circle_diagram(vals, labels):
         plt.savefig("diagram.png")
     except Exception as error:
         print (repr(error))
+
+def get_bar_diagram(labels, vals):
+    try:
+        plt.bar(labels, vals, color = colors)
+        plt.savefig("bar.png")
+    except Exception as error:
+        print(repr(error))
 
 
 DATABASE.timecheck()

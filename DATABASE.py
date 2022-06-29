@@ -86,6 +86,27 @@ def create_database_STATISTICS():
         if (sqlite_connection):
             sqlite_connection.close()
 
+def create_database_SETTINGS():
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        sqlite_create_table_query = '''CREATE TABLE SETTINGS (
+                                    id INTEGER NOT NULL,
+                                    expiration_period INTEGER NOT NULL,
+                                    user_limit INTEGER NOT NULL);'''
+
+        cursor = sqlite_connection.cursor()
+        cursor.execute(sqlite_create_table_query)
+        sqlite_connection.commit()
+        print("Таблица персональных настроек SETTINGS создана")
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке Creation_STATISTICS: ", error)
+    finally:
+        if (sqlite_connection):
+            sqlite_connection.close()
+
 def FREQUENCY_update(product, category, cursor, sqlite_connection):
     try:
         check_existance = """select word from FREQUENCY where word = ? AND category = ?"""
@@ -346,6 +367,85 @@ def timecheck():
 
     except sqlite3.Error as error:
         print("Ошибка в блоке timecheck: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def start_settings(id, expiration_period = 11, limit = float('+inf')):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+        
+        set_SETTINGS = """INSERT INTO SETTINGS
+                              (id, expiration_period, user_limit)
+                              VALUES (?, ?, ?);"""
+        settings = (id, expiration_period, limit)
+
+        cursor.execute(set_SETTINGS, settings)
+        sqlite_connection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке start_settings: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def change_expiration_period(id, new_period = 11):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+        
+        update_SETTINGS = """UPDATE SETTINGS set expiration_period = ? where id = ?"""
+        settings = (new_period, id)
+
+        cursor.execute(update_SETTINGS, settings)
+        sqlite_connection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке change_expiration_period: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def change_limit(id, new_limit = float('+inf')):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+        
+        update_SETTINGS = """UPDATE SETTINGS set user_limit = ? where id = ?"""
+        settings = (new_limit, id)
+
+        cursor.execute(update_SETTINGS, settings)
+        sqlite_connection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке change_limit: ", error)
+    finally:
+        if sqlite_connection:
+            sqlite_connection.close()
+
+def get_limit(id):
+    try:
+        sqlite_connection = sqlite3.connect('DATABASE.db')
+        cursor = sqlite_connection.cursor()
+        
+        get_limit = """SELECT user_limit from SETTINGS where id = ?"""
+
+        cursor.execute(get_limit, (id,))
+        limit = cursor.fetchall()[0][0]
+        sqlite_connection.commit()
+
+        cursor.close()
+        return limit
+
+    except sqlite3.Error as error:
+        print("Ошибка в блоке get_limit: ", error)
     finally:
         if sqlite_connection:
             sqlite_connection.close()
@@ -611,6 +711,6 @@ if __name__ == '__main__':
     #insert_new_category(999911111, 'food', 'bread', 90)
     #insert_new_category(999911111, 'other', 'glue', 500)
     #insert_new_category(999911111, 'drink', 'milk', 80)
-    #insert_new_category(000000000, '???', '???', 666)
-    #print(year_money_statistics(454610810, 0))
+    #insert_new_category(000000000, '???', '???', float('+inf'))
+    #current_month_money_statistics(user_id)
     pass
