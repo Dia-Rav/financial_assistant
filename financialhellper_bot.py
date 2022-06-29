@@ -429,7 +429,7 @@ def get_circle_diagram(vals, labels):
 
 def get_bar_diagram(labels, vals):
     try:
-        plt.bar(labels, vals)
+        plt.bar(labels, vals, color = colors)
         plt.savefig("bar.png")
     except Exception as error:
         print(repr(error))
