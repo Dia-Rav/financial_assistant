@@ -237,7 +237,6 @@ def get_statistics_for_period_one(mesg):
 def get_statistics_for_period_two(mesg):
 
     global tmp_data
-    print(tmp_data)
     statictics = ''
     period_labels = []
     period_values = []
@@ -285,9 +284,6 @@ def get_statistics_for_period_two(mesg):
     except Exception as error:
         print(repr(error))
         bot.send_message(mesg.from_user.id, "неверный ввод")
-
-
-
 
 @bot.message_handler(commands = ['report_for_current_month'])
 def report_for_current_month(message):
